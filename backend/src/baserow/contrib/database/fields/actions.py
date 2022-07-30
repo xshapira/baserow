@@ -399,18 +399,18 @@ class UpdateFieldActionType(ActionType):
         the backed up data.
         """
 
-        if cls._should_backup_field(
-            original_field, to_field_type_name, allowed_new_field_attrs
-        ):
-            backup_data = FieldDataBackupHandler.backup_field_data(
+        return (
+            FieldDataBackupHandler.backup_field_data(
                 original_field,
                 identifier_to_backup_into=cls._get_backup_identifier(
                     action, original_field.id, for_undo=for_undo
                 ),
             )
-        else:
-            backup_data = None
-        return backup_data
+            if cls._should_backup_field(
+                original_field, to_field_type_name, allowed_new_field_attrs
+            )
+            else None
+        )
 
     @classmethod
     def _should_backup_field(
@@ -469,9 +469,8 @@ class UpdateFieldActionType(ActionType):
             )
             for key in exported_field_attrs_which_havent_changed:
                 original_exported_values.pop(key)
-        else:
-            if "name" not in field_attrs_being_updated:
-                original_exported_values.pop("name")
+        elif "name" not in field_attrs_being_updated:
+            original_exported_values.pop("name")
         return original_exported_values
 
     @classmethod
@@ -484,12 +483,7 @@ class UpdateFieldActionType(ActionType):
         """
 
         base_name = f"field_{field_id}_backup_{action.id}"
-        if for_undo:
-            # When undoing we need to backup into a different column/table so we
-            # don't accidentally overwrite the data we are about to restore using.
-            return base_name + "_undo"
-        else:
-            return base_name
+        return f"{base_name}_undo" if for_undo else base_name
 
     @classmethod
     def _backup_field_then_update_back_to_previous_backup(

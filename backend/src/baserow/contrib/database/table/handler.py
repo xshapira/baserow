@@ -178,7 +178,7 @@ class TableHandler:
         :raises MaxFieldNameLengthExceeded: When the provided name is too long.
         """
 
-        if len(data) == 0:
+        if not data:
             raise InvalidInitialTableData("At least one row should be provided.")
 
         limit = settings.INITIAL_TABLE_DATA_LIMIT
@@ -207,19 +207,19 @@ class TableHandler:
             raise InitialTableDataDuplicateName()
 
         max_field_name_length = Field.get_max_name_length()
-        long_field_names = [x for x in field_name_set if len(x) > max_field_name_length]
-
-        if len(long_field_names) > 0:
+        if long_field_names := [
+            x for x in field_name_set if len(x) > max_field_name_length
+        ]:
             raise MaxFieldNameLengthExceeded(max_field_name_length)
 
-        if len(field_name_set.intersection(RESERVED_BASEROW_FIELD_NAMES)) > 0:
+        if field_name_set.intersection(RESERVED_BASEROW_FIELD_NAMES):
             raise ReservedBaserowFieldNameException()
 
         if "" in field_name_set:
             raise InvalidBaserowFieldName()
 
         for row in data:
-            for i in range(len(row), largest_column_count):
+            for _ in range(len(row), largest_column_count):
                 row.append("")
 
         return fields, data

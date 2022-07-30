@@ -126,9 +126,8 @@ class PaginatedExportJobFileWriter(FileWriter):
             self.job.refresh_from_db()
             if self.job.is_cancelled_or_expired():
                 raise ExportJobCanceledException()
-            else:
-                self.job.progress_percentage = current_row / total_rows
-                self.job.save()
+            self.job.progress_percentage = current_row / total_rows
+            self.job.save()
 
 
 class QuerysetSerializer(abc.ABC):
@@ -141,8 +140,10 @@ class QuerysetSerializer(abc.ABC):
         self.queryset = queryset
         self.field_serializers = [lambda row: ("id", "id", row.id)]
 
-        for field_object in ordered_field_objects:
-            self.field_serializers.append(self._get_field_serializer(field_object))
+        self.field_serializers.extend(
+            self._get_field_serializer(field_object)
+            for field_object in ordered_field_objects
+        )
 
     @abc.abstractmethod
     def write_to_file(self, file_writer: FileWriter, **kwargs):

@@ -69,7 +69,7 @@ class WebhookEventType(Instance):
         :return: The extracted table object.
         """
 
-        table = kwargs.get("table", None)
+        table = kwargs.get("table")
 
         if not isinstance(table, Table):
             raise ValueError(

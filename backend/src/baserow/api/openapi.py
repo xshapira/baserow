@@ -14,9 +14,15 @@ class AutoSchema(RegularAutoSchema):
         """
 
         if (
-            isinstance(serializer, DiscriminatorMappingSerializer)
-            or isinstance(serializer, DiscriminatorCustomFieldsMappingSerializer)
-        ) and serializer.many:
+            isinstance(
+                serializer,
+                (
+                    DiscriminatorMappingSerializer,
+                    DiscriminatorCustomFieldsMappingSerializer,
+                ),
+            )
+            and serializer.many
+        ):
             return True
 
         return super()._is_list_view(serializer)

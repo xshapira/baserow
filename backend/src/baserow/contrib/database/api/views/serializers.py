@@ -84,21 +84,20 @@ class FieldOptionsField(serializers.Field):
         :rtype: dict
         """
 
-        if isinstance(value, View):
-            field_options = self.context.get("field_options", None)
-            if field_options is None:
-                # If the fields are in the context we can pass them into the
-                # `get_field_options` call so that they don't have to be fetched from
-                # the database again.
-                field_options = value.get_field_options(
-                    self.create_if_missing, self.context.get("fields")
-                )
-            return {
-                field_options.field_id: self.serializer_class(field_options).data
-                for field_options in field_options
-            }
-        else:
+        if not isinstance(value, View):
             return value
+        field_options = self.context.get("field_options", None)
+        if field_options is None:
+            # If the fields are in the context we can pass them into the
+            # `get_field_options` call so that they don't have to be fetched from
+            # the database again.
+            field_options = value.get_field_options(
+                self.create_if_missing, self.context.get("fields")
+            )
+        return {
+            field_options.field_id: self.serializer_class(field_options).data
+            for field_options in field_options
+        }
 
 
 class ViewFilterSerializer(serializers.ModelSerializer):
@@ -183,7 +182,7 @@ class ViewDecorationSerializer(serializers.ModelSerializer):
 
 
 def _only_empty_dict(value):
-    if not (isinstance(value, dict) and not value):
+    if not isinstance(value, dict) or value:
         raise serializers.ValidationError("This field should be an empty object.")
 
 

@@ -772,10 +772,7 @@ class DateFieldType(FieldType):
     def get_export_serialized_value(self, row, field_name, cache, files_zip, storage):
         value = self.get_internal_value_from_db(row, field_name)
 
-        if value is None:
-            return value
-
-        return value.isoformat()
+        return value if value is None else value.isoformat()
 
     def set_import_serialized_value(
         self, row, field_name, value, id_mapping, files_zip, storage
@@ -850,7 +847,7 @@ class CreatedOnLastModifiedBaseFieldType(ReadOnlyFieldType, DateFieldType):
     def get_model_field(self, instance, **kwargs):
         kwargs["null"] = True
         kwargs["blank"] = True
-        kwargs.update(self.model_field_kwargs)
+        kwargs |= self.model_field_kwargs
         return self.model_field_class(**kwargs)
 
     def contains_query(self, field_name, value, model_field, field):
@@ -883,9 +880,8 @@ class CreatedOnLastModifiedBaseFieldType(ReadOnlyFieldType, DateFieldType):
         to_field_type = field_type_registry.get_by_model(to_field)
         if to_field_type.type != self.type:
             sql_format = from_field.get_psql_format()
-            variables = {}
             variable_name = f"{from_field.db_column}_timezone"
-            variables[variable_name] = from_field.get_timezone()
+            variables = {variable_name: from_field.get_timezone()}
             return (
                 f"""p_in = TO_CHAR(p_in::timestamptz at time zone %({variable_name})s,
                 '{sql_format}');""",
@@ -1086,12 +1082,11 @@ class LinkRowFieldType(FieldType):
         instance = field_object["field"]
         if hasattr(instance, "_related_model"):
             related_model = instance._related_model
-            primary_field = next(
+            if primary_field := next(
                 object
                 for object in related_model._field_objects.values()
                 if object["field"].primary
-            )
-            if primary_field:
+            ):
                 primary_field_name = primary_field["name"]
                 primary_field_values = []
                 for sub in value.all():
@@ -1334,8 +1329,7 @@ class LinkRowFieldType(FieldType):
             # related field can be deleted.
             from_field.link_row_related_field.delete()
         elif (
-            isinstance(to_field, self.model_class)
-            and isinstance(from_field, self.model_class)
+            isinstance(from_field, self.model_class)
             and to_field.link_row_table.id != from_field.link_row_table.id
         ):
             # If the table has changed we have to change the following data in the
@@ -1407,13 +1401,9 @@ class LinkRowFieldType(FieldType):
         if count == 0:
             return []
 
-        # Ignoring with nosec as this randint usage is purely for constructing
-        # random data in dev environments and is not being used for security or
-        # cryptographical reasons.
-        values = model.objects.order_by("?")[0 : randrange(0, 3)].values_list(  # nosec
+        return model.objects.order_by("?")[: randrange(0, 3)].values_list(
             "id", flat=True
         )
-        return values
 
     def export_serialized(self, field):
         serialized = super().export_serialized(field, False)
@@ -1492,10 +1482,9 @@ class LinkRowFieldType(FieldType):
         primary_field = field.get_related_primary_field()
         if primary_field is None:
             return BaserowFormulaInvalidType("references unknown or deleted table")
-        else:
-            primary_field = primary_field.specific
-            related_field_type = field_type_registry.get_by_model(primary_field)
-            return related_field_type.to_baserow_formula_type(primary_field)
+        primary_field = primary_field.specific
+        related_field_type = field_type_registry.get_by_model(primary_field)
+        return related_field_type.to_baserow_formula_type(primary_field)
 
     def to_baserow_formula_expression(
         self, field
@@ -1628,17 +1617,15 @@ class FileFieldType(FieldType):
             provided_names_by_row[row_index] = self._extract_file_names(value)
             unique_names.update(pn["name"] for pn in provided_names_by_row[row_index])
 
-        if len(unique_names) == 0:
+        if not unique_names:
             return values_by_row
 
         files = UserFile.objects.all().name(*unique_names)
         if len(files) != len(unique_names):
-            invalid_names = sorted(
-                list(unique_names - set((file.name) for file in files))
-            )
+            invalid_names = sorted(list(unique_names - {file.name for file in files}))
             raise UserFileDoesNotExist(invalid_names)
 
-        user_files_by_name = dict((file.name, file) for file in files)
+        user_files_by_name = {file.name: file for file in files}
         for row_index, value in values_by_row.items():
             serialized_files = []
             for file_names in provided_names_by_row[row_index]:
@@ -1686,12 +1673,7 @@ class FileFieldType(FieldType):
         return files
 
     def get_human_readable_value(self, value, field_object):
-        file_names = []
-        for file in value:
-            file_names.append(
-                file["visible_name"],
-            )
-
+        file_names = [file["visible_name"] for file in value]
         return ", ".join(file_names)
 
     def get_serializer_help_text(self, instance):
@@ -1724,7 +1706,7 @@ class FileFieldType(FieldType):
         # Ignoring with nosec as this randint usage is purely for constructing
         # random data in dev environments and is not being used for security or
         # cryptographical reasons.
-        for i in range(0, randrange(0, 3)):  # nosec
+        for _ in range(randrange(0, 3)):
             instance = UserFile.objects.all()[randint(0, count - 1)]  # nosec
             serialized = instance.serialize()
             serialized["visible_name"] = serialized["name"]
@@ -1832,14 +1814,13 @@ class SingleSelectFieldType(SelectOptionBaseFieldType):
 
     def get_serializer_field(self, instance, **kwargs):
         required = kwargs.get("required", False)
-        field_serializer = serializers.IntegerField(
+        return serializers.IntegerField(
             **{
                 "required": required,
                 "allow_null": not required,
                 **kwargs,
             }
         )
-        return field_serializer
 
     def get_response_serializer_field(self, instance, **kwargs):
         required = kwargs.get("required", False)
@@ -1877,7 +1858,7 @@ class SingleSelectFieldType(SelectOptionBaseFieldType):
 
         # If the select option is not found or if it does not belong to the right field
         # then the provided value is invalid and a validation error can be raised.
-        raise ValidationError(f"The provided value is not a valid option.")
+        raise ValidationError("The provided value is not a valid option.")
 
     def prepare_value_for_db_in_bulk(self, instance, values_by_row):
         unique_values = {value for value in values_by_row.values() if value is not None}
@@ -1911,9 +1892,7 @@ class SingleSelectFieldType(SelectOptionBaseFieldType):
         )
 
     def get_export_value(self, value, field_object):
-        if value is None:
-            return value
-        return value.value
+        return value if value is None else value.value
 
     def get_model_field(self, instance, **kwargs):
         return SingleSelectForeignKey(
@@ -1944,7 +1923,7 @@ class SingleSelectFieldType(SelectOptionBaseFieldType):
 
             # If there are no values we don't need to convert the value to a string
             # since all values will be converted to null.
-            if len(values_mapping) == 0:
+            if not values_mapping:
                 return None
 
             # Has been checked for issues, everything is properly escaped and safe.
@@ -1979,19 +1958,19 @@ class SingleSelectFieldType(SelectOptionBaseFieldType):
 
             # If there are no values we don't need to convert the value since all
             # values should be converted to null.
-            if len(values_mapping) == 0:
-                return None
-
-            # Has been checked for issues, everything is properly escaped and safe.
-            return (  # nosec
-                f"""p_in = (
+            return (
+                (
+                    f"""p_in = (
                 SELECT value FROM (
                     VALUES {','.join(values_mapping)}
                 ) AS values (key, value)
                 WHERE key = lower(p_in)
             );
             """,
-                variables,
+                    variables,
+                )
+                if values_mapping
+                else None
             )
 
         return super().get_alter_column_prepare_new_value(
@@ -2013,13 +1992,12 @@ class SingleSelectFieldType(SelectOptionBaseFieldType):
         if order_direction == "DESC":
             options.reverse()
 
-        order = Case(
+        return Case(
             *[
                 When(**{field_name: option, "then": index})
                 for index, option in enumerate(options)
             ]
         )
-        return order
 
     def random_value(self, instance, fake, cache):
         """
@@ -2063,7 +2041,7 @@ class SingleSelectFieldType(SelectOptionBaseFieldType):
 
         # If there are no values then there is no way this search could match this
         # field.
-        if len(option_value_mappings) == 0:
+        if not option_value_mappings:
             return Q()
 
         # Query uses parameters to pass in option values to so no injection possible.
@@ -2099,7 +2077,9 @@ class SingleSelectFieldType(SelectOptionBaseFieldType):
             return
 
         setattr(
-            row, field_name + "_id", id_mapping["database_field_select_options"][value]
+            row,
+            f"{field_name}_id",
+            id_mapping["database_field_select_options"][value],
         )
 
     def to_baserow_formula_type(self, field):
@@ -2211,12 +2191,10 @@ class MultipleSelectFieldType(SelectOptionBaseFieldType):
         # reasons.
         random_choice = randint(1, len(select_options))  # nosec
 
-        return sample(set([x.id for x in select_options]), random_choice)
+        return sample({x.id for x in select_options}, random_choice)
 
     def get_export_value(self, value, field_object):
-        if value is None:
-            return value
-        return [item.value for item in value.all()]
+        return value if value is None else [item.value for item in value.all()]
 
     def get_human_readable_value(self, value, field_object):
         export_value = self.get_export_value(value, field_object)
@@ -2485,10 +2463,11 @@ class FormulaFieldType(ReadOnlyFieldType):
         # doing any type checking, we can't know what the expression is in this
         # case but we still want to generate a model field so the model can be
         # used to do SQL operations like dropping fields etc.
-        if not (instance.error or instance.trashed):
-            expression = self.to_baserow_formula_expression(instance)
-        else:
-            expression = None
+        expression = (
+            None
+            if (instance.error or instance.trashed)
+            else self.to_baserow_formula_expression(instance)
+        )
 
         (
             field_instance,

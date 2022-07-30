@@ -103,45 +103,43 @@ def _construct_dependency(field_instance, dependency, field_lookup_cache):
                     dependant=field_instance, broken_reference_field_name=via_field_name
                 )
             ]
-        else:
-            from baserow.contrib.database.fields.models import LinkRowField
+        from baserow.contrib.database.fields.models import LinkRowField
 
-            if not isinstance(via_field, LinkRowField):
-                # Depend on the via field directly so if it is renamed/deleted/changed
-                # we get notified
-                return [FieldDependency(dependant=field_instance, dependency=via_field)]
-            else:
-                deps = []
-                if field_instance.id != via_field.id:
-                    # Depend directly on the via field also so if it is renamed or
-                    # changes we get notified.
-                    deps.append(
-                        FieldDependency(
-                            dependant=field_instance, dependency=via_field, via=None
-                        )
-                    )
-
-                target_table = via_field.link_row_table
-                target_field = field_lookup_cache.lookup_by_name(
-                    target_table, dependency
+        if not isinstance(via_field, LinkRowField):
+            # Depend on the via field directly so if it is renamed/deleted/changed
+            # we get notified
+            return [FieldDependency(dependant=field_instance, dependency=via_field)]
+        deps = []
+        if field_instance.id != via_field.id:
+            # Depend directly on the via field also so if it is renamed or
+            # changes we get notified.
+            deps.append(
+                FieldDependency(
+                    dependant=field_instance, dependency=via_field, via=None
                 )
-                if target_field is None:
-                    deps.append(
-                        FieldDependency(
-                            dependant=field_instance,
-                            broken_reference_field_name=dependency,
-                            via=via_field,
-                        )
-                    )
-                else:
-                    deps.append(
-                        FieldDependency(
-                            dependant=field_instance,
-                            dependency=target_field,
-                            via=via_field,
-                        )
-                    )
-                return deps
+            )
+
+        target_table = via_field.link_row_table
+        target_field = field_lookup_cache.lookup_by_name(
+            target_table, dependency
+        )
+        if target_field is None:
+            deps.append(
+                FieldDependency(
+                    dependant=field_instance,
+                    broken_reference_field_name=dependency,
+                    via=via_field,
+                )
+            )
+        else:
+            deps.append(
+                FieldDependency(
+                    dependant=field_instance,
+                    dependency=target_field,
+                    via=via_field,
+                )
+            )
+        return deps
 
 
 def rebuild_field_dependencies(

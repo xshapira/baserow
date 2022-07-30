@@ -39,12 +39,7 @@ def extract_allowed(values, allowed_fields):
     :rtype: dict
     """
 
-    allowed_values = {}
-    for field in allowed_fields:
-        if field in values:
-            allowed_values[field] = values[field]
-
-    return allowed_values
+    return {field: values[field] for field in allowed_fields if field in values}
 
 
 def set_allowed_attrs(values, allowed_fields, instance):
@@ -313,7 +308,7 @@ def get_model_reference_field_name(lookup_model, target_model):
             classes = tuple(field.related_model._meta.parents.keys()) + (
                 field.related_model,
             )
-            if any([target_model == c for c in classes]):
+            if any(target_model == c for c in classes):
                 return field.name
 
     return None
@@ -348,10 +343,10 @@ def grouper(n: int, iterable: Iterable):
 
     it = iter(iterable)
     while True:
-        chunk = tuple(islice(it, n))
-        if not chunk:
+        if chunk := tuple(islice(it, n)):
+            yield chunk
+        else:
             return
-        yield chunk
 
 
 class Progress:
@@ -508,9 +503,8 @@ class ChildProgressBuilder:
 
     @classmethod
     def build(cls, builder: Optional[ChildProgressBuilder], child_total: int):
-        if builder is not None:
-            parent = builder.parent
-            represents_progress = builder.represents_progress
-            return parent.create_child(represents_progress, child_total)
-        else:
+        if builder is None:
             return Progress(child_total)
+        parent = builder.parent
+        represents_progress = builder.represents_progress
+        return parent.create_child(represents_progress, child_total)

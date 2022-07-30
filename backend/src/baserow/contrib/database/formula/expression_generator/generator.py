@@ -96,21 +96,20 @@ def _baserow_expression_to_django_expression(
     try:
         if isinstance(baserow_expression.expression_type, BaserowFormulaInvalidType):
             return Value(None)
-        else:
-            inserting_aggregate = (
-                baserow_expression.aggregate and model_instance is not None and insert
-            )
-            if inserting_aggregate:
-                # When inserting a row we can't possibly calculate the aggregate result
-                # as there is no row id that can be used to connect it to other tables.
-                # Instead we need to insert a placeholder empty value which will then
-                # get replaced later on with the correct value by an UPDATE statement.
-                return baserow_expression.expression_type.placeholder_empty_value()
-            else:
-                generator = BaserowExpressionToDjangoExpressionGenerator(
-                    model, model_instance
-                )
-                return baserow_expression.accept(generator)
+        if inserting_aggregate := (
+            baserow_expression.aggregate
+            and model_instance is not None
+            and insert
+        ):
+            # When inserting a row we can't possibly calculate the aggregate result
+            # as there is no row id that can be used to connect it to other tables.
+            # Instead we need to insert a placeholder empty value which will then
+            # get replaced later on with the correct value by an UPDATE statement.
+            return baserow_expression.expression_type.placeholder_empty_value()
+        generator = BaserowExpressionToDjangoExpressionGenerator(
+            model, model_instance
+        )
+        return baserow_expression.accept(generator)
     except RecursionError:
         raise MaximumFormulaSizeError()
     except Exception as e:
@@ -123,8 +122,7 @@ def _get_model_field_for_type(expression_type):
         field_instance,
         baserow_field_type,
     ) = expression_type.get_baserow_field_instance_and_type()
-    model_field = baserow_field_type.get_model_field(field_instance)
-    return model_field
+    return baserow_field_type.get_model_field(field_instance)
 
 
 class BaserowExpressionToDjangoExpressionGenerator(
@@ -214,9 +212,8 @@ class BaserowExpressionToDjangoExpressionGenerator(
             model_field = lookup_table_model._meta.get_field(
                 path_to_lookup_from_lookup_table
             )
-            filtered_join_to_lookup_field = (
-                filtered_join_to_lookup_table + "__" + path_to_lookup_from_lookup_table
-            )
+            filtered_join_to_lookup_field = f"{filtered_join_to_lookup_table}__{path_to_lookup_from_lookup_table}"
+
 
         return self._make_reference_to_model_field(
             filtered_join_to_lookup_field, model_field, already_in_subquery=True
@@ -234,7 +231,7 @@ class BaserowExpressionToDjangoExpressionGenerator(
         split_ref = path_to_lookup_from_lookup_table.split("__")
         link_field_in_lookup_table = split_ref[0]
 
-        path_to_link_table = m2m_to_lookup_table + "__" + link_field_in_lookup_table
+        path_to_link_table = f"{m2m_to_lookup_table}__{link_field_in_lookup_table}"
 
         link_table_model = self._get_remote_model(
             link_field_in_lookup_table, lookup_table_model
@@ -249,15 +246,12 @@ class BaserowExpressionToDjangoExpressionGenerator(
         model_field = link_table_model._meta.get_field(primary_field_in_related_table)
         return (
             model_field,
-            filtered_join_to_link_table + "__" + primary_field_in_related_table,
+            f"{filtered_join_to_link_table}__{primary_field_in_related_table}",
         )
 
     # noinspection PyProtectedMember,PyMethodMayBeStatic
     def _get_remote_model(self, m2m_field_name, mode):
-        looked_up_link_table_model = mode._meta.get_field(
-            m2m_field_name
-        ).remote_field.model
-        return looked_up_link_table_model
+        return mode._meta.get_field(m2m_field_name).remote_field.model
 
     # noinspection PyProtectedMember
     def _setup_annotations_and_joins(self, model, join_path, middle_link=None):
@@ -273,7 +267,7 @@ class BaserowExpressionToDjangoExpressionGenerator(
         if middle_link is not None:
             # We are joining via a middle m2m relation, ensure we don't use any trashed
             # rows there also.
-            relation_filters[middle_link + "__trashed"] = False
+            relation_filters[f"{middle_link}__trashed"] = False
         self.pre_annotations[unique_annotation_path_name] = FilteredRelation(
             join_path,
             condition=Q(**relation_filters),
@@ -285,26 +279,26 @@ class BaserowExpressionToDjangoExpressionGenerator(
     ):
         from baserow.contrib.database.fields.fields import SingleSelectForeignKey
 
-        if isinstance(model_field, SingleSelectForeignKey):
-            single_select_extractor = ExpressionWrapper(
-                JSONObject(
-                    **{
-                        "value": f"{db_column}__value",
-                        "id": f"{db_column}__id",
-                        "color": f"{db_column}__color",
-                    }
-                ),
-                output_field=model_field,
-            )
-            if already_in_subquery:
-                return single_select_extractor
-            else:
-                return self._wrap_in_subquery(single_select_extractor)
-        else:
+        if not isinstance(model_field, SingleSelectForeignKey):
             return ExpressionWrapper(
                 F(db_column),
                 output_field=model_field,
             )
+        single_select_extractor = ExpressionWrapper(
+            JSONObject(
+                **{
+                    "value": f"{db_column}__value",
+                    "id": f"{db_column}__id",
+                    "color": f"{db_column}__color",
+                }
+            ),
+            output_field=model_field,
+        )
+        return (
+            single_select_extractor
+            if already_in_subquery
+            else self._wrap_in_subquery(single_select_extractor)
+        )
 
     def _wrap_in_subquery(self, single_select_extractor):
         return ExpressionWrapper(

@@ -204,11 +204,9 @@ class UserFileHandler:
         hash = sha256_hash(stream)
         file_name = truncate_middle(file_name, 64)
 
-        existing_user_file = UserFile.objects.filter(
+        if existing_user_file := UserFile.objects.filter(
             original_name=file_name, sha256_hash=hash
-        ).first()
-
-        if existing_user_file:
+        ).first():
             return existing_user_file
 
         extension = pathlib.Path(file_name).suffix[1:].lower()
@@ -314,7 +312,7 @@ class UserFileHandler:
                         settings.BASEROW_FILE_UPLOAD_SIZE_LIMIT_MB,
                         "The provided file is too large.",
                     )
-        except (RequestException, UnacceptableAddressException, ConnectionError):
+        except (RequestException, UnacceptableAddressException):
             raise FileURLCouldNotBeReached("The provided URL could not be reached.")
 
         file = SimpleUploadedFile(file_name, content)

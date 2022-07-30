@@ -72,7 +72,7 @@ class TokenPermissionsField(serializers.Field):
                 for instance in value:
                     if (
                         not isinstance(instance, list)
-                        or not len(instance) == 2
+                        or len(instance) != 2
                         or not isinstance(instance[0], str)
                         or not isinstance(instance[1], int)
                     ):
@@ -86,7 +86,7 @@ class TokenPermissionsField(serializers.Field):
                     else:
                         self.fail("invalid_instance_type")
 
-        if len(tables) > 0:
+        if tables:
             tables = {
                 table.id: table
                 for table in Table.objects.filter(id__in=tables.keys()).select_related(
@@ -94,7 +94,7 @@ class TokenPermissionsField(serializers.Field):
                 )
             }
 
-        if len(databases) > 0:
+        if databases:
             databases = {
                 database.id: database
                 for database in Database.objects.filter(id__in=databases.keys())
@@ -155,19 +155,19 @@ class TokenPermissionsField(serializers.Field):
                         permissions[permission.type].append(
                             ("database", permission.database_id)
                         )
-                    elif permission.table_id is not None:
+                    else:
                         permissions[permission.type].append(
                             ("table", permission.table_id)
                         )
 
-            return permissions
         else:
             permissions = {}
             for type_name in self.valid_types:
                 if type_name not in value:
                     return None
                 permissions[type_name] = value[type_name]
-            return permissions
+
+        return permissions
 
 
 class TokenPermissionsFieldFix(OpenApiSerializerFieldExtension):

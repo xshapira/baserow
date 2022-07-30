@@ -110,8 +110,7 @@ def map_exceptions(mapping: ExceptionMappingType):
 
 def _search_up_class_hierarchy_for_mapping(e, mapping):
     for clazz in e.__class__.mro():
-        value = mapping.get(clazz)
-        if value:
+        if value := mapping.get(clazz):
             return value
     return None
 
@@ -158,10 +157,7 @@ def validate_data(
         detail = serialize_errors_recursive(serializer.errors)
         raise exception_to_raise(detail)
 
-    if return_validated:
-        return serializer.validated_data
-
-    return serializer.data
+    return serializer.validated_data if return_validated else serializer.data
 
 
 def validate_data_custom_fields(
@@ -337,7 +333,7 @@ def get_serializer_class(
         return value
 
     attrs["validate"] = validate
-    return type(str(model_.__name__ + "Serializer"), (base_class,), attrs)
+    return type(str(f"{model_.__name__}Serializer"), (base_class,), attrs)
 
 
 class MappingSerializer:

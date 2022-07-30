@@ -97,7 +97,7 @@ class ExportHandler:
 
         _raise_if_invalid_view_or_table_for_exporter(exporter_type, view)
 
-        job = ExportJob.objects.create(
+        return ExportJob.objects.create(
             user=user,
             table=table,
             view=view,
@@ -105,7 +105,6 @@ class ExportHandler:
             status=EXPORT_JOB_PENDING_STATUS,
             export_options=export_options,
         )
-        return job
 
     @staticmethod
     def run_export_job(job) -> ExportJob:

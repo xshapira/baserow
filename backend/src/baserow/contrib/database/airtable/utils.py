@@ -11,12 +11,11 @@ def extract_share_id_from_url(public_base_url: str) -> str:
     :return: The extracted share id.
     """
 
-    result = re.search(r"https:\/\/airtable.com\/shr(.*)$", public_base_url)
-
-    if not result:
+    if result := re.search(
+        r"https:\/\/airtable.com\/shr(.*)$", public_base_url
+    ):
+        return f"shr{result[1]}"
+    else:
         raise ValueError(
-            f"Please provide a valid shared Airtable URL (e.g. "
-            f"https://airtable.com/shrxxxxxxxxxxxxxx)"
+            'Please provide a valid shared Airtable URL (e.g. https://airtable.com/shrxxxxxxxxxxxxxx)'
         )
-
-    return f"shr{result.group(1)}"

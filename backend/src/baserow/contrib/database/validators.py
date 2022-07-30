@@ -8,16 +8,14 @@ def _lazy_re_compile(regex_value, flags=0):
     """Lazily compile a regex with flags."""
 
     def _compile():
-        # Compile the regex if it was not passed pre-compiled.
         if isinstance(regex_value, str):
             return regex.compile(regex_value, flags)
-        else:
-            # Dev only warning, fine if this is not run in real code, this is a copied
-            # module see the docstring on UnicodeRegexValidator
-            assert (  # nosec
-                not flags
-            ), "flags must be empty if regex is passed pre-compiled"
-            return regex_value
+        # Dev only warning, fine if this is not run in real code, this is a copied
+        # module see the docstring on UnicodeRegexValidator
+        assert (  # nosec
+            not flags
+        ), "flags must be empty if regex is passed pre-compiled"
+        return regex_value
 
     return SimpleLazyObject(_compile)
 

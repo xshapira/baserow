@@ -23,10 +23,7 @@ class AnnotatedQ:
         """
 
         self.annotation = annotation or {}
-        if isinstance(q, Q):
-            self.q = q
-        else:
-            self.q = Q(**q)
+        self.q = q if isinstance(q, Q) else Q(**q)
 
     def __invert__(self):
         return AnnotatedQ(self.annotation, ~self.q)

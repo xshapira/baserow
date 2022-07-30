@@ -67,10 +67,7 @@ class PublicViewPageType(PageType):
             return False
 
         view_type = view_type_registry.get_by_model(view.specific_class)
-        if not view_type.when_shared_publicly_requires_realtime_events:
-            return False
-
-        return True
+        return bool(view_type.when_shared_publicly_requires_realtime_events)
 
     def get_group_name(self, slug, **kwargs):
         return f"view-{slug}"

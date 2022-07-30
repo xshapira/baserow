@@ -180,14 +180,13 @@ def _calculate_addition_interval_type(
         arg2_type, BaserowFormulaDateIntervalType
     ):
         # interval + interval = interval
-        resulting_type = arg1_type
+        return arg1_type
     elif isinstance(arg1_type, BaserowFormulaDateIntervalType):
         # interval + date = date
-        resulting_type = arg2_type
+        return arg2_type
     else:
         # date + interval = date
-        resulting_type = arg1_type
-    return resulting_type
+        return arg1_type
 
 
 # noinspection PyMethodMayBeStatic
@@ -261,10 +260,7 @@ class BaserowFormulaDateIntervalType(BaserowFormulaValidType):
 
     def get_human_readable_value(self, value: Any, field_object) -> str:
         human_readable_value = self.get_export_value(value, field_object)
-        if human_readable_value is None:
-            return ""
-        else:
-            return str(human_readable_value)
+        return "" if human_readable_value is None else str(human_readable_value)
 
 
 class BaserowFormulaDateType(BaserowFormulaValidType):
@@ -547,27 +543,21 @@ class BaserowFormulaSingleSelectType(BaserowFormulaValidType):
         return field_type.get_response_serializer_field(instance, **kwargs)
 
     def get_export_value(self, value, field_object) -> Any:
-        if value is None:
-            return value
-        return value["value"]
+        return value if value is None else value["value"]
 
     def contains_query(self, field_name, value, model_field, field):
         value = value.strip()
         # If an empty value has been provided we do not want to filter at all.
-        if value == "":
-            return Q()
-        return Q(**{f"{field_name}__value__icontains": value})
+        return Q() if value == "" else Q(**{f"{field_name}__value__icontains": value})
 
     def get_alter_column_prepare_old_value(self, connection, from_field, to_field):
-        sql = f"""
+        sql = """
             p_in = p_in->'value';
         """
         return sql, {}
 
     def get_human_readable_value(self, value, field_object) -> str:
-        if value is None:
-            return ""
-        return self.get_export_value(value, field_object)
+        return "" if value is None else self.get_export_value(value, field_object)
 
     def cast_to_text(
         self,

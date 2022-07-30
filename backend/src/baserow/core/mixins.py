@@ -99,9 +99,8 @@ class PolymorphicContentTypeMixin:
         super().save(*args, **kwargs)
 
     def _ensure_content_type_is_set(self):
-        if not self.id:
-            if not self.content_type_id:
-                self.content_type = ContentType.objects.get_for_model(self)
+        if not self.id and not self.content_type_id:
+            self.content_type = ContentType.objects.get_for_model(self)
 
     @cached_property
     def specific(self):
@@ -110,9 +109,7 @@ class PolymorphicContentTypeMixin:
         self._ensure_content_type_is_set()
         content_type = ContentType.objects.get_for_id(self.content_type_id)
         model_class = self.specific_class
-        if model_class is None:
-            return self
-        elif isinstance(self, model_class):
+        if model_class is None or isinstance(self, model_class):
             return self
         else:
             return content_type.get_object_for_this_type(id=self.id)
@@ -160,8 +157,8 @@ class PolymorphicContentTypeMixin:
         :type new_model_class: Model
         """
 
-        old_fields = set([f for f in self._meta.get_fields()])
-        new_fields = set([f for f in new_model_class._meta.get_fields()])
+        old_fields = set(list(self._meta.get_fields()))
+        new_fields = set(list(new_model_class._meta.get_fields()))
         field_names_to_remove = old_fields - new_fields
         field_names_to_add = new_fields - old_fields
 

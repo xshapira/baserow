@@ -71,8 +71,7 @@ class ExportedFileURLSerializerMixin(serializers.Serializer):
 
     @extend_schema_field(OpenApiTypes.URI)
     def get_url(self, instance):
-        name = self.get_instance_attr(instance, "exported_file_name")
-        if name:
+        if name := self.get_instance_attr(instance, "exported_file_name"):
             path = ExportHandler().export_file_path(name)
             return default_storage.url(path)
         else:

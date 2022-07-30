@@ -389,7 +389,7 @@ def clear_generated_model_cache_receiver(sender, **kwargs):
 
 # noinspection PyPep8Naming
 def safely_update_formula_versions(sender, **kwargs):
-    apps = kwargs.get("apps", None)
+    apps = kwargs.get("apps")
     # app.ready will be called for management commands also, we only want to
     # execute the following hook when we are starting the django server as
     # otherwise backwards migrations etc will crash because of this.

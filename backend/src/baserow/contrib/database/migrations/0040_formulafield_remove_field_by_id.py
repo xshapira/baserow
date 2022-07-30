@@ -167,9 +167,10 @@ def forward(apps, schema_editor):
     FormulaField = apps.get_model("database", "FormulaField")
 
     for formula in FormulaField.objects.all():
-        field_id_to_name = {}
-        for field in formula.table.field_set.all():
-            field_id_to_name[field.id] = field.name
+        field_id_to_name = {
+            field.id: field.name for field in formula.table.field_set.all()
+        }
+
         formula.old_formula_with_field_by_id = formula.formula
         formula.formula = update_field_names(
             formula.formula, field_ids_to_replace_with_name_refs=field_id_to_name
@@ -181,9 +182,11 @@ def forward(apps, schema_editor):
 def reverse(apps, schema_editor):
     FormulaField = apps.get_model("database", "FormulaField")
     for formula_field in FormulaField.objects.all():
-        field_name_to_id = {}
-        for field in formula_field.table.field_set.all():
-            field_name_to_id[field.name] = field.id
+        field_name_to_id = {
+            field.name: field.id
+            for field in formula_field.table.field_set.all()
+        }
+
         formula_field.formula = update_field_names(
             formula_field.formula, field_names_to_replace_with_id_refs=field_name_to_id
         )

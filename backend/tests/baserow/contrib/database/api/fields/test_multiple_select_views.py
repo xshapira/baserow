@@ -55,27 +55,40 @@ def test_batch_create_rows_multiple_select_field(api_client, data_fixture):
     expected_response_body = {
         "items": [
             {
-                f"id": 1,
+                "id": 1,
                 f"field_{multiple_select_field.id}": [
-                    {"id": select_option_3.id, "color": "blue", "value": "Option 3"}
+                    {
+                        "id": select_option_3.id,
+                        "color": "blue",
+                        "value": "Option 3",
+                    }
                 ],
                 "order": "1.00000000000000000000",
             },
             {
-                f"id": 2,
+                "id": 2,
                 f"field_{multiple_select_field.id}": [
-                    {"id": select_option_3.id, "color": "blue", "value": "Option 3"},
-                    {"id": select_option_2.id, "color": "blue", "value": "Option 2"},
+                    {
+                        "id": select_option_3.id,
+                        "color": "blue",
+                        "value": "Option 3",
+                    },
+                    {
+                        "id": select_option_2.id,
+                        "color": "blue",
+                        "value": "Option 2",
+                    },
                 ],
                 "order": "2.00000000000000000000",
             },
             {
-                f"id": 3,
+                "id": 3,
                 f"field_{multiple_select_field.id}": [],
                 "order": "3.00000000000000000000",
             },
         ]
     }
+
 
     response = api_client.post(
         url,
@@ -126,46 +139,57 @@ def test_batch_update_rows_multiple_select_field(api_client, data_fixture):
     request_body = {
         "items": [
             {
-                f"id": row_1.id,
+                "id": row_1.id,
                 f"field_{multiple_select_field.id}": [select_option_3.id],
             },
             {
-                f"id": row_2.id,
+                "id": row_2.id,
                 f"field_{multiple_select_field.id}": [
                     select_option_3.id,
                     select_option_2.id,
                 ],
             },
-            {
-                f"id": row_3.id,
-                f"field_{multiple_select_field.id}": [],
-            },
+            {"id": row_3.id, f"field_{multiple_select_field.id}": []},
         ]
     }
+
     expected_response_body = {
         "items": [
             {
-                f"id": row_1.id,
+                "id": row_1.id,
                 f"field_{multiple_select_field.id}": [
-                    {"id": select_option_3.id, "color": "blue", "value": "Option 3"}
+                    {
+                        "id": select_option_3.id,
+                        "color": "blue",
+                        "value": "Option 3",
+                    }
                 ],
                 "order": "1.00000000000000000000",
             },
             {
-                f"id": row_2.id,
+                "id": row_2.id,
                 f"field_{multiple_select_field.id}": [
-                    {"id": select_option_3.id, "color": "blue", "value": "Option 3"},
-                    {"id": select_option_2.id, "color": "blue", "value": "Option 2"},
+                    {
+                        "id": select_option_3.id,
+                        "color": "blue",
+                        "value": "Option 3",
+                    },
+                    {
+                        "id": select_option_2.id,
+                        "color": "blue",
+                        "value": "Option 2",
+                    },
                 ],
                 "order": "1.00000000000000000000",
             },
             {
-                f"id": row_3.id,
+                "id": row_3.id,
                 f"field_{multiple_select_field.id}": [],
                 "order": "1.00000000000000000000",
             },
         ]
     }
+
 
     response = api_client.patch(
         url,
@@ -201,16 +225,14 @@ def test_batch_update_rows_multiple_select_field_wrong_option(api_client, data_f
     url = reverse("api:database:rows:batch", kwargs={"table_id": table.id})
     request_body = {
         "items": [
+            {"id": row_1.id, f"field_{multiple_select_field.id}": [787]},
             {
-                f"id": row_1.id,
-                f"field_{multiple_select_field.id}": [787],
-            },
-            {
-                f"id": row_2.id,
+                "id": row_2.id,
                 f"field_{multiple_select_field.id}": [789, select_option_1.id],
             },
         ]
     }
+
 
     response = api_client.patch(
         url,
@@ -246,12 +268,10 @@ def test_batch_update_rows_multiple_select_field_null_as_id(api_client, data_fix
     url = reverse("api:database:rows:batch", kwargs={"table_id": table.id})
     request_body = {
         "items": [
-            {
-                f"id": row_1.id,
-                f"field_{multiple_select_field.id}": [None],
-            },
+            {"id": row_1.id, f"field_{multiple_select_field.id}": [None]}
         ]
     }
+
 
     response = api_client.patch(
         url,
@@ -328,21 +348,13 @@ def test_batch_update_rows_multiple_select_field_maintain_relationships(
 
     url = reverse("api:database:rows:batch", kwargs={"table_id": table.id})
     request_body = {
-        "items": [
-            {
-                f"id": row_2.id,
-                f"field_{multiple_select_field.id}": [],
-            },
-        ]
+        "items": [{"id": row_2.id, f"field_{multiple_select_field.id}": []}]
     }
+
     expected_response_body = {
-        "items": [
-            {
-                f"id": row_2.id,
-                f"field_{multiple_select_field.id}": [],
-            },
-        ]
+        "items": [{"id": row_2.id, f"field_{multiple_select_field.id}": []}]
     }
+
 
     response = api_client.patch(
         url,

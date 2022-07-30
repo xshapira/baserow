@@ -420,9 +420,7 @@ class FieldType(
 
         values = {
             "name": field.name,
-        }
-
-        values.update({key: getattr(field, key) for key in self.allowed_fields})
+        } | {key: getattr(field, key) for key in self.allowed_fields}
 
         if self.can_have_select_options:
             values["select_options"] = [
@@ -835,10 +833,7 @@ class FieldType(
         """
 
         human_readable_value = self.get_export_value(value, field_object)
-        if human_readable_value is None:
-            return ""
-        else:
-            return str(human_readable_value)
+        return "" if human_readable_value is None else str(human_readable_value)
 
     # noinspection PyMethodMayBeStatic
     def get_other_fields_to_trash_restore_always_together(
@@ -1453,10 +1448,14 @@ class FieldConverterRegistry(Registry):
         :rtype: None or FieldConverter
         """
 
-        for converter in self.registry.values():
-            if converter.is_applicable(*args, **kwargs):
-                return converter
-        return None
+        return next(
+            (
+                converter
+                for converter in self.registry.values()
+                if converter.is_applicable(*args, **kwargs)
+            ),
+            None,
+        )
 
 
 # A default field type registry is created here, this is the one that is used

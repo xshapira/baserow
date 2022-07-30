@@ -33,14 +33,8 @@ def url_validator(value):
     except ValueError:
         raise ValidationError("Invalid URL")
 
-    # in case the user does not provide a port we assume 80 if it is a
-    # http url or 443 otherwise.
     if port is None:
-        if url.scheme == "http":
-            port = 80
-        else:
-            port = 443
-
+        port = 80 if url.scheme == "http" else 443
     addr_validator = AddrValidator()
 
     try:

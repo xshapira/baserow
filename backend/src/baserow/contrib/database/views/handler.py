@@ -157,11 +157,7 @@ class ViewHandler:
             view_model = View
 
         if base_queryset is None:
-            tables_to_lock = ("self",)
-            if view_model is not View:
-                # We are a specific type of View like a GalleryView, make sure to lock
-                # the row in the View table by adding the `view_ptr_id`.
-                tables_to_lock = ("self", "view_ptr_id")
+            tables_to_lock = ("self", ) if view_model is View else ("self", "view_ptr_id")
             base_queryset = view_model.objects.select_for_update(of=tables_to_lock)
 
         return self.get_view(view_id, view_model, base_queryset)
@@ -781,8 +777,7 @@ class ViewHandler:
 
             order_by.append(order)
 
-        order_by.append("order")
-        order_by.append("id")
+        order_by.extend(("order", "id"))
         queryset = queryset.order_by(*order_by)
 
         return queryset
@@ -1383,14 +1378,14 @@ class ViewHandler:
             )
 
             if not search:
-                to_cache = {}
-                for key, value in db_result.items():
-                    # We don't cache total value
-                    if key != "total":
-                        to_cache[self._get_aggregation_value_cache_key(view, key)] = {
-                            "value": value,
-                            "version": need_computation[key]["version"],
-                        }
+                to_cache = {
+                    self._get_aggregation_value_cache_key(view, key): {
+                        "value": value,
+                        "version": need_computation[key]["version"],
+                    }
+                    for key, value in db_result.items()
+                    if key != "total"
+                }
 
                 # Let's cache the newly computed values
                 cache.set_many(to_cache)
@@ -1625,7 +1620,7 @@ class ViewHandler:
             ):
                 field_errors[field_name] = ["This field is required."]
 
-        if len(field_errors) > 0:
+        if field_errors:
             raise ValidationError(field_errors)
 
         allowed_values = extract_allowed(values, allowed_field_names)
@@ -1895,18 +1890,15 @@ class CachingPublicViewRowChecker:
                 else:
                     visible_ids = row_ids
 
-                if len(visible_ids) > 0:
-                    visible_views_rows.append(PublicViewRows(view, visible_ids))
-
             else:
                 visible_ids = set(self._check_rows_visible(filter_qs, rows))
-                if len(visible_ids) > 0:
-                    visible_views_rows.append(PublicViewRows(view, visible_ids))
+            if len(visible_ids) > 0:
+                visible_views_rows.append(PublicViewRows(view, visible_ids))
 
-        for visible_view in self._always_visible_views:
-            visible_views_rows.append(
-                PublicViewRows(visible_view, PublicViewRows.ALL_ROWS_ALLOWED)
-            )
+        visible_views_rows.extend(
+            PublicViewRows(visible_view, PublicViewRows.ALL_ROWS_ALLOWED)
+            for visible_view in self._always_visible_views
+        )
 
         return visible_views_rows
 
@@ -1923,14 +1915,7 @@ class CachingPublicViewRowChecker:
     def _view_row_checks_can_be_cached(self, view):
         if self._updated_field_ids is None:
             return True
-        for view_filter in view.viewfilter_set.all():
-            if view_filter.field_id in self._updated_field_ids:
-                # We found a view filter for a field which will be updated hence we
-                # need to check both before and after a row update occurs
-                return False
-        # Every single updated field does not have a filter on it, hence
-        # we only need to check if a given row is visible in the view once
-        # as any changes to the fields in said row wont be for fields with
-        # filters and so the result of the first check will be still
-        # valid for any subsequent checks.
-        return True
+        return all(
+            view_filter.field_id not in self._updated_field_ids
+            for view_filter in view.viewfilter_set.all()
+        )

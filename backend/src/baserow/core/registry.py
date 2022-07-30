@@ -57,20 +57,19 @@ class CustomFieldsInstanceMixin:
         :rtype: ModelSerializer
         """
 
-        model_class = getattr(self, "model_class")
-        if not model_class:
+        if model_class := getattr(self, "model_class"):
+            return get_serializer_class(
+                model_class,
+                self.serializer_field_names,
+                field_overrides=self.serializer_field_overrides,
+                *args,
+                **kwargs,
+            )
+        else:
             raise ValueError(
                 "Attribute model_class must be set, maybe you forgot to "
                 "extend the ModelInstanceMixin?"
             )
-
-        return get_serializer_class(
-            model_class,
-            self.serializer_field_names,
-            field_overrides=self.serializer_field_overrides,
-            *args,
-            **kwargs,
-        )
 
     def get_serializer(self, model_instance, base_class=None, context=None, **kwargs):
         """

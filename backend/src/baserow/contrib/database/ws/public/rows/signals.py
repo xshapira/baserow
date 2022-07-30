@@ -390,9 +390,10 @@ def public_rows_updated(
 
     # Any remaining views in the updated_rows_public_views dict are views which
     # previously didn't show the old row, but now show the new row, so we want created.
-    public_views_where_rows_were_created = public_views_where_rows_were_created + list(
+    public_views_where_rows_were_created += list(
         view_slug_to_updated_public_view_rows.values()
     )
+
 
     def _send_created_updated_deleted_row_signals_to_views():
         _send_rows_deleted_event_to_views(

@@ -49,12 +49,14 @@ def test_batch_create_rows_file_field(api_client, data_fixture):
     expected_response_body = {
         "items": [
             {
-                f"id": 1,
-                f"field_{file_field.id}": [{"name": file3.name, "is_image": True}],
+                "id": 1,
+                f"field_{file_field.id}": [
+                    {"name": file3.name, "is_image": True}
+                ],
                 "order": "1.00000000000000000000",
             },
             {
-                f"id": 2,
+                "id": 2,
                 f"field_{file_field.id}": [
                     {
                         "name": file2.name,
@@ -68,12 +70,13 @@ def test_batch_create_rows_file_field(api_client, data_fixture):
                 "order": "2.00000000000000000000",
             },
             {
-                f"id": 3,
+                "id": 3,
                 f"field_{file_field.id}": [],
                 "order": "3.00000000000000000000",
             },
         ]
     }
+
 
     response = api_client.post(
         url,
@@ -117,33 +120,33 @@ def test_batch_update_rows_file_field(api_client, data_fixture):
     request_body = {
         "items": [
             {
-                f"id": row_1.id,
+                "id": row_1.id,
                 f"field_{file_field.id}": [
                     {"name": file3.name, "visible_name": "new name"}
                 ],
             },
             {
-                f"id": row_2.id,
+                "id": row_2.id,
                 f"field_{file_field.id}": [
                     {"name": file3.name, "visible_name": "new name"},
                     {"name": file2.name, "visible_name": "new name"},
                 ],
             },
-            {
-                f"id": row_3.id,
-                f"field_{file_field.id}": [],
-            },
+            {"id": row_3.id, f"field_{file_field.id}": []},
         ]
     }
+
     expected_response_body = {
         "items": [
             {
-                f"id": row_1.id,
-                f"field_{file_field.id}": [{"name": file3.name, "is_image": True}],
+                "id": row_1.id,
+                f"field_{file_field.id}": [
+                    {"name": file3.name, "is_image": True}
+                ],
                 "order": "1.00000000000000000000",
             },
             {
-                f"id": row_2.id,
+                "id": row_2.id,
                 f"field_{file_field.id}": [
                     {
                         "name": file2.name,
@@ -157,12 +160,13 @@ def test_batch_update_rows_file_field(api_client, data_fixture):
                 "order": "1.00000000000000000000",
             },
             {
-                f"id": row_3.id,
+                "id": row_3.id,
                 f"field_{file_field.id}": [],
                 "order": "1.00000000000000000000",
             },
         ]
     }
+
 
     response = api_client.patch(
         url,
@@ -210,24 +214,28 @@ def test_batch_update_rows_file_field_wrong_file(api_client, data_fixture):
     request_body = {
         "items": [
             {
-                f"id": row_1.id,
+                "id": row_1.id,
                 f"field_{file_field.id}": [
                     {"name": invalid_file_names[0], "visible_name": "new name"}
                 ],
             },
             {
-                f"id": row_2.id,
+                "id": row_2.id,
                 f"field_{file_field.id}": [
-                    {"name": invalid_file_names[1], "visible_name": "new name"},
-                    {"name": invalid_file_names[2], "visible_name": "new name"},
+                    {
+                        "name": invalid_file_names[1],
+                        "visible_name": "new name",
+                    },
+                    {
+                        "name": invalid_file_names[2],
+                        "visible_name": "new name",
+                    },
                 ],
             },
-            {
-                f"id": row_3.id,
-                f"field_{file_field.id}": [],
-            },
+            {"id": row_3.id, f"field_{file_field.id}": []},
         ]
     }
+
 
     response = api_client.patch(
         url,
@@ -254,23 +262,17 @@ def test_batch_update_rows_file_field_zero_files(api_client, data_fixture):
     model = table.get_model()
     row_1 = model.objects.create()
     url = reverse("api:database:rows:batch", kwargs={"table_id": table.id})
-    request_body = {
-        "items": [
-            {
-                f"id": row_1.id,
-                f"field_{file_field.id}": [],
-            },
-        ]
-    }
+    request_body = {"items": [{"id": row_1.id, f"field_{file_field.id}": []}]}
     expected_response_body = {
         "items": [
             {
-                f"id": row_1.id,
+                "id": row_1.id,
                 f"field_{file_field.id}": [],
                 "order": "1.00000000000000000000",
-            },
+            }
         ]
     }
+
 
     response = api_client.patch(
         url,

@@ -237,7 +237,7 @@ def get_example_row_serializer_class(example_type="get", user_field_names=False)
         )
 
     for i, field_type in enumerate(field_types):
-        if field_type.read_only and not add_readonly_fields:
+        if field_type.read_only and not is_response_example:
             continue
         instance = field_type.model_class()
         kwargs = {
@@ -275,9 +275,10 @@ def get_example_row_metadata_field_serializer():
     if len(metadata_types) == 0:
         return None
 
-    fields = {}
-    for metadata_type in metadata_types:
-        fields[metadata_type.type] = metadata_type.get_example_serializer_field()
+    fields = {
+        metadata_type.type: metadata_type.get_example_serializer_field()
+        for metadata_type in metadata_types
+    }
 
     per_row_serializer = type(
         "RowMetadataSerializer", (serializers.Serializer,), fields
@@ -362,5 +363,4 @@ def get_example_batch_rows_serializer_class(example_type="get", user_field_names
             max_length=settings.BATCH_ROWS_SIZE_LIMIT,
         )
     }
-    class_object = type(class_name, (serializers.Serializer,), fields)
-    return class_object
+    return type(class_name, (serializers.Serializer,), fields)

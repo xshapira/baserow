@@ -32,10 +32,9 @@ def get_user(token):
     if anonymous:
         if settings.DISABLE_ANONYMOUS_PUBLIC_VIEW_WS_CONNECTIONS:
             return
-        else:
-            from django.contrib.auth.models import AnonymousUser
+        from django.contrib.auth.models import AnonymousUser
 
-            return AnonymousUser()
+        return AnonymousUser()
     else:
         try:
             payload = jwt_decode_token(token)
@@ -74,9 +73,7 @@ class JWTTokenAuthMiddleware(BaseMiddleware):
         scope["user"] = None
         scope["web_socket_id"] = None
 
-        jwt_token = get.get("jwt_token")
-
-        if jwt_token:
+        if jwt_token := get.get("jwt_token"):
             scope["user"] = await get_user(jwt_token[0])
             scope["web_socket_id"] = str(uuid.uuid4())
 

@@ -4,7 +4,7 @@ from django.db.models import Q
 
 class UserFileQuerySet(models.QuerySet):
     def name(self, *names):
-        if len(names) == 0:
+        if not names:
             raise ValueError("At least one name must be provided.")
 
         q_or = Q()

@@ -444,8 +444,5 @@ class FormulaHandler:
 
     @classmethod
     def get_lookup_field_reference_expression(cls, field, primary_field, formula_type):
-        if primary_field is None:
-            db_column = "unknown"
-        else:
-            db_column = primary_field.db_column
+        db_column = "unknown" if primary_field is None else primary_field.db_column
         return BaserowFieldReference(field.db_column, db_column, formula_type)

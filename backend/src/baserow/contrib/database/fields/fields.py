@@ -192,17 +192,16 @@ class BaserowExpressionField(models.Field):
     def pre_save(self, model_instance, add):
         if self.expression is None:
             return Value(None)
+        if add:
+            return FormulaHandler.baserow_expression_to_insert_django_expression(
+                self.expression, model_instance
+            )
         else:
-            if add:
-                return FormulaHandler.baserow_expression_to_insert_django_expression(
+            return (
+                FormulaHandler.baserow_expression_to_row_update_django_expression(
                     self.expression, model_instance
                 )
-            else:
-                return (
-                    FormulaHandler.baserow_expression_to_row_update_django_expression(
-                        self.expression, model_instance
-                    )
-                )
+            )
 
 
 class SerialField(models.Field):
@@ -220,11 +219,10 @@ class SerialField(models.Field):
         return "serial"
 
     def pre_save(self, model_instance, add):
-        if add and not getattr(model_instance, self.name):
-            sequence_name = f"{model_instance._meta.db_table}_{self.name}_seq"
-            return RawSQL(  # nosec
-                f"nextval('{sequence_name}'::regclass)",
-                (),
-            )
-        else:
+        if not add or getattr(model_instance, self.name):
             return super().pre_save(model_instance, add)
+        sequence_name = f"{model_instance._meta.db_table}_{self.name}_seq"
+        return RawSQL(  # nosec
+            f"nextval('{sequence_name}'::regclass)",
+            (),
+        )

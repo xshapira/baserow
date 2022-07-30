@@ -42,9 +42,7 @@ def calculate_typed_expression(formula_field, field_lookup_cache):
         else:
             de_many_expr = typed_expr_merged_with_user_options
 
-        wrapped_expr = de_many_expr.expression_type.wrap_at_field_level(de_many_expr)
-
-        return wrapped_expr
+        return de_many_expr.expression_type.wrap_at_field_level(de_many_expr)
     except RecursionError:
         raise MaximumFormulaSizeError()
 

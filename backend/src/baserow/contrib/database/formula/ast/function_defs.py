@@ -464,17 +464,14 @@ class BaserowEqual(TwoArgumentBaserowFunction):
     ) -> BaserowExpression[BaserowFormulaType]:
         arg1_type = arg1.expression_type
         arg2_type = arg2.expression_type
-        if not (type(arg1_type) is type(arg2_type)):
-            # If trying to compare two types which can be compared, but are of different
-            # types, then first cast them to text and then compare.
-            # We to ourselves via the __class__ property here so subtypes of this type
-            # use themselves here instead of us!
-            return self.__class__().call_and_type_with(
+        return (
+            func_call.with_valid_type(BaserowFormulaBooleanType())
+            if type(arg1_type) is type(arg2_type)
+            else self.__class__().call_and_type_with(
                 BaserowToText().call_and_type_with(arg1),
                 BaserowToText().call_and_type_with(arg2),
             )
-        else:
-            return func_call.with_valid_type(BaserowFormulaBooleanType())
+        )
 
     def to_django_expression(self, arg1: Expression, arg2: Expression) -> Expression:
         return EqualsExpr(
@@ -498,7 +495,7 @@ class BaserowIf(ThreeArgumentBaserowFunction):
     ) -> BaserowExpression[BaserowFormulaType]:
         arg2_type = arg2.expression_type
         arg3_type = arg3.expression_type
-        if not (type(arg2_type) is type(arg3_type)):
+        if type(arg2_type) is not type(arg3_type):
             # Replace the current if func_call with one which casts both args to text
             # if they are of different types as PostgreSQL requires all cases of a case
             # statement to be of the same type.
@@ -507,15 +504,14 @@ class BaserowIf(ThreeArgumentBaserowFunction):
                 BaserowToText().call_and_type_with(arg2),
                 BaserowToText().call_and_type_with(arg3),
             )
-        else:
-            if isinstance(arg2_type, BaserowFormulaNumberType) and isinstance(
-                arg3_type, BaserowFormulaNumberType
-            ):
-                resulting_type = calculate_number_type([arg2_type, arg3_type])
-            else:
-                resulting_type = arg2_type
+        resulting_type = (
+            calculate_number_type([arg2_type, arg3_type])
+            if isinstance(arg2_type, BaserowFormulaNumberType)
+            and isinstance(arg3_type, BaserowFormulaNumberType)
+            else arg2_type
+        )
 
-            return func_call.with_valid_type(resulting_type)
+        return func_call.with_valid_type(resulting_type)
 
     def to_django_expression(
         self, arg1: Expression, arg2: Expression, arg3: Expression
@@ -997,8 +993,7 @@ class BaserowWhenEmpty(TwoArgumentBaserowFunction):
 def _calculate_aggregate_orders(join_ids):
     orders = []
     for join in reversed(join_ids):
-        orders.append(join[0] + "__order")
-        orders.append(join[0] + "__id")
+        orders.extend((f"{join[0]}__order", f"{join[0]}__id"))
     return orders
 
 
@@ -1030,10 +1025,11 @@ class BaserowArrayAgg(OneArgumentBaserowFunction):
         json_builder_args = {"value": args[0]}
         if len(join_ids) > 1:
             json_builder_args["ids"] = JSONObject(
-                **{tbl: F(i + "__id") for i, tbl in join_ids}
+                **{tbl: F(f"{i}__id") for i, tbl in join_ids}
             )
+
         else:
-            json_builder_args["id"] = F(join_ids[0][0] + "__id")
+            json_builder_args["id"] = F(f"{join_ids[0][0]}__id")
 
         orders = _calculate_aggregate_orders(join_ids)
 

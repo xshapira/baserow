@@ -131,9 +131,11 @@ class BaserowFormulaType(abc.ABC):
         :return: A new BaserowFormulaType.
         """
 
-        kwargs = {}
-        for field_name in cls.all_fields():
-            kwargs[field_name] = getattr(formula_field, field_name)
+        kwargs = {
+            field_name: getattr(formula_field, field_name)
+            for field_name in cls.all_fields()
+        }
+
         return cls(**kwargs)
 
     def new_type_with_user_and_calculated_options_merged(self: T, formula_field):
@@ -177,14 +179,14 @@ class BaserowFormulaType(abc.ABC):
 
         formula_field.formula_type = self.type
         for attr in BASEROW_FORMULA_TYPE_ALLOWED_FIELDS:
-            if attr in self.user_overridable_formatting_option_fields:
-                # Only set the calculated type formatting options if the user has not
-                # already set them.
-                if getattr(formula_field, attr) is None:
-                    setattr(formula_field, attr, getattr(self, attr))
-            elif attr in self.internal_fields:
+            if (
+                attr in self.user_overridable_formatting_option_fields
+                and getattr(formula_field, attr) is None
+                or attr not in self.user_overridable_formatting_option_fields
+                and attr in self.internal_fields
+            ):
                 setattr(formula_field, attr, getattr(self, attr))
-            else:
+            elif attr not in self.user_overridable_formatting_option_fields:
                 setattr(formula_field, attr, None)
 
     def get_baserow_field_instance_and_type(self):

@@ -83,7 +83,11 @@ class UpdateFieldNameFormulaVisitor(BaserowFormulaVisitor):
         field_name = convert_string_literal_token_to_string(
             reference.getText(), is_single_quote_ref
         )
-        if self.via_field is not None:
+        if (
+            self.via_field is not None
+            or field_name not in self.field_names_to_update
+            and field_name not in self.field_names_to_replace_with_id_refs
+        ):
             # Don't do any field reference renaming as this is a field being re-named
             # in another table
             return ctx.getText()
@@ -91,12 +95,10 @@ class UpdateFieldNameFormulaVisitor(BaserowFormulaVisitor):
             escaped_new_name = self._rename_and_escape(field_name, is_single_quote_ref)
             field = ctx.FIELD().getText()
             return f"{field}({escaped_new_name})"
-        elif field_name in self.field_names_to_replace_with_id_refs:
+        else:
             return (
                 f"field_by_id({self.field_names_to_replace_with_id_refs[field_name]})"
             )
-        else:
-            return ctx.getText()
 
     def visitLookupFieldReference(
         self, ctx: BaserowFormula.LookupFieldReferenceContext
@@ -108,13 +110,12 @@ class UpdateFieldNameFormulaVisitor(BaserowFormulaVisitor):
         )
         lookup = ctx.field_reference(1)
         if self.via_field is None:
-            if field_name in self.field_names_to_update:
-                escaped_new_name = self._rename_and_escape(
-                    field_name, is_single_quote_ref
-                )
-                return self._rebuild_lookup(ctx, escaped_new_name, lookup.getText())
-            else:
+            if field_name not in self.field_names_to_update:
                 return ctx.getText()
+            escaped_new_name = self._rename_and_escape(
+                field_name, is_single_quote_ref
+            )
+            return self._rebuild_lookup(ctx, escaped_new_name, lookup.getText())
         else:
             is_single_quote_lookup = lookup.SINGLEQ_STRING_LITERAL()
             lookup_field_name = convert_string_literal_token_to_string(
@@ -139,10 +140,7 @@ class UpdateFieldNameFormulaVisitor(BaserowFormulaVisitor):
 
     def _rename_and_escape(self, current_name, is_single_quote):
         new_name = self.field_names_to_update[current_name]
-        escaped_new_name = convert_string_to_string_literal_token(
-            new_name, is_single_quote
-        )
-        return escaped_new_name
+        return convert_string_to_string_literal_token(new_name, is_single_quote)
 
     def visitFieldByIdReference(self, ctx: BaserowFormula.FieldByIdReferenceContext):
         field_id = int(str(ctx.INTEGER_LITERAL()))

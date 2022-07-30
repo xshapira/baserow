@@ -49,15 +49,8 @@ class Percentile(Aggregate):
         else:
             self.return_array = False
 
-        if continuous:
-            extra["function"] = "PERCENTILE_CONT"
-        else:
-            extra["function"] = "PERCENTILE_DISC"
-
+        extra["function"] = "PERCENTILE_CONT" if continuous else "PERCENTILE_DISC"
         super().__init__(expression, percentiles=percentiles, **extra)
 
     def _resolve_output_field(self):
-        if self.return_array:
-            return ArrayField(FloatField())
-        else:
-            return FloatField()
+        return ArrayField(FloatField()) if self.return_array else FloatField()
