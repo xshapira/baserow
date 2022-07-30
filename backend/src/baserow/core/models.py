@@ -150,11 +150,7 @@ class Group(TrashableModelMixin, CreatedAndUpdatedOnMixin):
             else:
                 return False
 
-        if include_trash:
-            manager = GroupUser.objects_and_trash
-        else:
-            manager = GroupUser.objects
-
+        manager = GroupUser.objects_and_trash if include_trash else GroupUser.objects
         queryset = manager.filter(user_id=user.id, group_id=self.id)
 
         if raise_error:

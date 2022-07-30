@@ -23,15 +23,10 @@ def get_include_exclude_field_ids(table, include=None, exclude=None):
     """
 
     fields = get_include_exclude_fields(table, include, exclude)
-    field_ids = None
-
     if include is not None or exclude is not None:
-        if fields:
-            field_ids = [field.get("id") for field in fields.values()]
-        else:
-            field_ids = []
-
-    return field_ids
+        return [field.get("id") for field in fields.values()] if fields else []
+    else:
+        return None
 
 
 def get_include_exclude_fields(
@@ -93,10 +88,7 @@ def extract_field_names_from_string(value):
     :return: A list of field names.
     """
 
-    if not value:
-        return []
-
-    return split_comma_separated_string(value)
+    return split_comma_separated_string(value) if value else []
 
 
 def extract_field_ids_from_string(value):
@@ -110,11 +102,12 @@ def extract_field_ids_from_string(value):
     :rtype: list
     """
 
-    if not value:
-        return []
-
-    return [
-        int(re.sub("[^0-9]", "", str(v)))
-        for v in value.split(",")
-        if any(c.isdigit() for c in v)
-    ]
+    return (
+        [
+            int(re.sub("[^0-9]", "", str(v)))
+            for v in value.split(",")
+            if any(c.isdigit() for c in v)
+        ]
+        if value
+        else []
+    )

@@ -31,11 +31,7 @@ class Timezone(Expression):
         return c
 
     def __repr__(self):
-        return "{}({}, {})".format(
-            self.__class__.__name__,
-            self.source_expression,
-            self.timezone,
-        )
+        return f"{self.__class__.__name__}({self.source_expression}, {self.timezone})"
 
     def as_sql(self, compiler, connection):
         params = []

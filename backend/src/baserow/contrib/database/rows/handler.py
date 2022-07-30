@@ -188,7 +188,7 @@ class RowHandler:
             if isinstance(model_field, ManyToManyField):
                 manytomany_values[name] = values[name]
 
-        for name in manytomany_values.keys():
+        for name in manytomany_values:
             del values[name]
 
         return values, manytomany_values
@@ -521,16 +521,15 @@ class RowHandler:
             corresponding internal baserow field name (field_1,field_2 etc)
         """
 
-        to_internal_name = {}
-        for field_object in field_objects.values():
-            to_internal_name[field_object["field"].name] = field_object["name"]
+        to_internal_name = {
+            field_object["field"].name: field_object["name"]
+            for field_object in field_objects.values()
+        }
 
-        mapped_back_to_internal_field_names = {}
-        for user_field_name, value in values.items():
-            internal_name = to_internal_name[user_field_name]
-            mapped_back_to_internal_field_names[internal_name] = value
-        values = mapped_back_to_internal_field_names
-        return values
+        return {
+            to_internal_name[user_field_name]: value
+            for user_field_name, value in values.items()
+        }
 
     def update_row_by_id(
         self,
@@ -1063,7 +1062,7 @@ class RowHandler:
         update_collector = CachingFieldUpdateCollector(
             table, starting_row_id=row.id, existing_model=model
         )
-        updated_field_ids = [field_id for field_id in model._field_objects.keys()]
+        updated_field_ids = list(model._field_objects.keys())
         for (
             dependant_field,
             dependant_field_type,
@@ -1152,7 +1151,7 @@ class RowHandler:
         update_collector = CachingFieldUpdateCollector(
             table, starting_row_id=row.id, existing_model=model
         )
-        updated_field_ids = [field_id for field_id in model._field_objects.keys()]
+        updated_field_ids = list(model._field_objects.keys())
         for (
             dependant_field,
             dependant_field_type,
@@ -1231,7 +1230,7 @@ class RowHandler:
             user, group, table.database, trashed_rows, parent_id=table.id
         )
 
-        updated_field_ids = [field_id for field_id in model._field_objects.keys()]
+        updated_field_ids = list(model._field_objects.keys())
         update_collector = CachingFieldUpdateCollector(
             table, starting_row_id=row_ids, existing_model=model
         )

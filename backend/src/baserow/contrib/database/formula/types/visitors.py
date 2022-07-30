@@ -77,29 +77,28 @@ class FieldReferenceExtractingVisitor(
     def visit_field_reference(
         self, field_reference: BaserowFieldReference[UnTyped]
     ) -> FieldDependencies:
-        if field_reference.target_field is None:
-            field = self.field_lookup_cache.lookup_by_name(
-                self.table, field_reference.referenced_field_name
-            )
-            from baserow.contrib.database.fields.models import LinkRowField
-
-            if field is not None and isinstance(field, LinkRowField):
-                primary_field = field.get_related_primary_field()
-                return {
-                    (
-                        field_reference.referenced_field_name,
-                        primary_field.name if primary_field is not None else "unknown",
-                    )
-                }
-
-            return {field_reference.referenced_field_name}
-        else:
+        if field_reference.target_field is not None:
             return {
                 (
                     field_reference.referenced_field_name,
                     field_reference.target_field,
                 )
             }
+        field = self.field_lookup_cache.lookup_by_name(
+            self.table, field_reference.referenced_field_name
+        )
+        from baserow.contrib.database.fields.models import LinkRowField
+
+        if field is not None and isinstance(field, LinkRowField):
+            primary_field = field.get_related_primary_field()
+            return {
+                (
+                    field_reference.referenced_field_name,
+                    primary_field.name if primary_field is not None else "unknown",
+                )
+            }
+
+        return {field_reference.referenced_field_name}
 
     def visit_string_literal(
         self, string_literal: BaserowStringLiteral[UnTyped]
@@ -155,38 +154,39 @@ class FormulaTypingVisitor(
                 f"references the deleted or unknown field"
                 f" {field_reference.referenced_field_name}"
             )
-        else:
-            field_type = field_type_registry.get_by_model(referenced_field)
-            target_field = field_reference.target_field
-            if target_field is not None:
-                from baserow.contrib.database.fields.models import LinkRowField
+        field_type = field_type_registry.get_by_model(referenced_field)
+        target_field = field_reference.target_field
+        if target_field is not None:
+            from baserow.contrib.database.fields.models import LinkRowField
 
-                if not isinstance(referenced_field, LinkRowField):
-                    return field_reference.with_invalid_type(
-                        "first lookup function argument must be a link row field"
-                    )
-                target_table = referenced_field.link_row_table
+            if not isinstance(referenced_field, LinkRowField):
+                return field_reference.with_invalid_type(
+                    "first lookup function argument must be a link row field"
+                )
+            target_table = referenced_field.link_row_table
 
-                target_field = self.field_lookup_cache.lookup_by_name(
-                    target_table, target_field
+            target_field = self.field_lookup_cache.lookup_by_name(
+                target_table, target_field
+            )
+            return (
+                field_reference.with_invalid_type(
+                    f"references the deleted or unknown field"
+                    f" {field_reference.target_field} in table "
+                    f"{target_table.name}"
                 )
-                if target_field is None:
-                    return field_reference.with_invalid_type(
-                        f"references the deleted or unknown field"
-                        f" {field_reference.target_field} in table "
-                        f"{target_table.name}"
-                    )
-                else:
-                    return self._create_lookup_reference(
-                        target_field, referenced_field, field_reference
-                    )
-            # check the lookup field
-            expression = field_type.to_baserow_formula_expression(referenced_field)
-            if isinstance(expression, BaserowFunctionCall):
-                expression = expression.expression_type.unwrap_at_field_level(
-                    expression
+                if target_field is None
+                else self._create_lookup_reference(
+                    target_field, referenced_field, field_reference
                 )
-            return expression
+            )
+
+        # check the lookup field
+        expression = field_type.to_baserow_formula_expression(referenced_field)
+        if isinstance(expression, BaserowFunctionCall):
+            expression = expression.expression_type.unwrap_at_field_level(
+                expression
+            )
+        return expression
 
     def _create_lookup_reference(self, target_field, referenced_field, field_reference):
         from baserow.contrib.database.fields.registries import field_type_registry
@@ -202,7 +202,7 @@ class FormulaTypingVisitor(
                 return field_reference.with_invalid_type(
                     "references a deleted or unknown table"
                 )
-            sub_ref = "__" + related_primary_field.db_column
+            sub_ref = f"__{related_primary_field.db_column}"
         else:
             sub_ref = ""
         return BaserowFieldReference(

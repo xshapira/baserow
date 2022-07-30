@@ -148,10 +148,11 @@ class ActionHandler:
         minutes = int(settings.MINUTES_UNTIL_ACTION_CLEANED_UP)
         cutoff = now - timezone.timedelta(minutes=minutes)
 
-        types_with_custom_clean_up = set()
-        for action_type in action_type_registry.get_all():
-            if action_type.has_custom_cleanup():
-                types_with_custom_clean_up.add(action_type.type)
+        types_with_custom_clean_up = {
+            action_type.type
+            for action_type in action_type_registry.get_all()
+            if action_type.has_custom_cleanup()
+        }
 
         # Delete in a separate atomic block so if we crash later we don't roll back
         # these valid deletes.

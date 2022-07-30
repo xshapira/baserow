@@ -29,7 +29,7 @@ def run_command_concurrently(
     if header is None:
         header = f"Running '{' '.join(command)}' in {concurrency} subprocesses:"
 
-    for i in range(concurrency):
+    for _ in range(concurrency):
         # Only used by management commands so safe to Popen
         p = subprocess.Popen(  # nosec
             command,
@@ -51,19 +51,15 @@ def run_command_concurrently(
                     out = cp.stderr.readline().strip().replace("\r", "")
                     scr.addstr(i + 1, 0, out)
                     new_child_processes.append(cp)
-                else:
-                    if cp.returncode != 0:
-                        error_processes.append(cp)
+                elif cp.returncode != 0:
+                    error_processes.append(cp)
             child_processes = new_child_processes
             scr.refresh()
     finally:
         curses.endwin()
 
     if error_processes:
-        print(
-            f"Errors from subprocesses were (they will be mixed due to "
-            f"concurrency):"
-        )
+        print('Errors from subprocesses were (they will be mixed due to concurrency):')
         for error_process in error_processes:
             print(error_process.stderr.read(), file=sys.stderr)
         raise CommandError(

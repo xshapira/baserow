@@ -370,11 +370,7 @@ class ViewType(
                 f"class."
             )
 
-        meta = type(
-            "Meta",
-            (),
-            {"ref_name": self.type + "_view_field_options"},
-        )
+        meta = type("Meta", (), {"ref_name": f"{self.type}_view_field_options"})
 
         attrs = {
             "Meta": meta,
@@ -385,7 +381,7 @@ class ViewType(
         }
 
         return type(
-            str("Generated" + self.type.capitalize() + "ViewFieldOptionsSerializer"),
+            str(f"Generated{self.type.capitalize()}ViewFieldOptionsSerializer"),
             (Serializer,),
             attrs,
         )
@@ -528,16 +524,12 @@ class ViewType(
         :return: A dict of prepared values for the provided fields.
         """
 
-        values = {
+        return {
             "name": view.name,
             "filter_type": view.filter_type,
             "filters_disabled": view.filters_disabled,
             "public_view_password": view.public_view_password,
-        }
-
-        values.update({key: getattr(view, key) for key in self.allowed_fields})
-
-        return values
+        } | {key: getattr(view, key) for key in self.allowed_fields}
 
 
 class ViewTypeRegistry(

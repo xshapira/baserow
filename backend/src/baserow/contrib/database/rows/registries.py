@@ -24,7 +24,7 @@ class RowMetadataRegistry(Registry):
         """
 
         return self.generate_and_merge_metadata_for_rows(
-            table, (i for i in [row_id])
+            table, iter([row_id])
         ).get(row_id, {})
 
     def generate_and_merge_metadata_for_rows(
@@ -52,19 +52,18 @@ class RowMetadataRegistry(Registry):
         """
 
         metadata_types = self.get_all()
-        if len(metadata_types) > 0:
-            row_ids = list(row_ids)
-            row_metadata = {}
-            for metadata_type in metadata_types:
-                per_row_metadata = metadata_type.generate_metadata_for_rows(
-                    table, row_ids
-                )
-                for row_id, metadata in per_row_metadata.items():
-                    single_row_metadata = row_metadata.setdefault(row_id, {})
-                    single_row_metadata[metadata_type.type] = metadata
-            return row_metadata
-        else:
+        if len(metadata_types) <= 0:
             return {}
+        row_ids = list(row_ids)
+        row_metadata = {}
+        for metadata_type in metadata_types:
+            per_row_metadata = metadata_type.generate_metadata_for_rows(
+                table, row_ids
+            )
+            for row_id, metadata in per_row_metadata.items():
+                single_row_metadata = row_metadata.setdefault(row_id, {})
+                single_row_metadata[metadata_type.type] = metadata
+        return row_metadata
 
 
 class RowMetadataType(Instance, abc.ABC):

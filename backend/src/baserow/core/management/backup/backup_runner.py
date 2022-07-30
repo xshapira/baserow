@@ -133,20 +133,15 @@ class BaserowBackupRunner:
         return ["pg_dump"] + self._get_postgres_tool_args() + extra_command
 
     def _get_postgres_tool_args(self) -> List[str]:
-        params = [
-            "--host=" + self.host,
-            "--dbname=" + self.database,
-            "--port=" + self.port,
-            "--username=" + self.username,
-            # Run in directory mode so we can do parallel dumps using the jobs flag.
+        return [
+            f"--host={self.host}",
+            f"--dbname={self.database}",
+            f"--port={self.port}",
+            f"--username={self.username}",
             "-Fd",
-            "--jobs=" + str(self.jobs),
-            # Force non-interactive password input as we will be running many
-            # separate pg_dump commands and entering the password over and over is
-            # horrible.
+            f"--jobs={str(self.jobs)}",
             "-w",
         ]
-        return params
 
     def _build_pg_restore_command(self, extra_command: List[str]) -> List[str]:
         return ["pg_restore"] + self._get_postgres_tool_args() + extra_command

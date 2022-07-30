@@ -293,10 +293,7 @@ class FieldHandler:
         )
         update_collector.send_additional_field_updated_signals()
 
-        if return_updated_fields:
-            return instance, updated_fields
-        else:
-            return instance
+        return (instance, updated_fields) if return_updated_fields else instance
 
     def update_field(
         self,
@@ -408,12 +405,9 @@ class FieldHandler:
             user,
         )
 
-        # Try to find a data converter that can be applied.
-        converter = field_converter_registry.find_applicable_converter(
+        if converter := field_converter_registry.find_applicable_converter(
             from_model, old_field, field
-        )
-
-        if converter:
+        ):
             # If a field data converter is found we are going to use that one to alter
             # the field and maybe do some data conversion.
             converter.alter_field(
@@ -518,10 +512,7 @@ class FieldHandler:
         )
         update_collector.send_additional_field_updated_signals()
 
-        if return_updated_fields:
-            return field, updated_fields
-        else:
-            return field
+        return (field, updated_fields) if return_updated_fields else field
 
     def delete_field(
         self,
@@ -645,16 +636,15 @@ class FieldHandler:
         to_create = []
         for select_option in select_options:
             create_if_not_exists_id = select_option.get(UPSERT_OPTION_DICT_KEY)
-            if create_if_not_exists_id is not None:
-                if create_if_not_exists_id in existing_option_ids:
-                    to_update.append(create_if_not_exists_id)
-                else:
-                    to_create.append(select_option)
-            elif "id" in select_option:
-                to_update.append(select_option["id"])
-            else:
+            if (
+                create_if_not_exists_id is not None
+                and create_if_not_exists_id in existing_option_ids
+            ):
+                to_update.append(create_if_not_exists_id)
+            elif create_if_not_exists_id is not None or "id" not in select_option:
                 to_create.append(select_option)
-
+            else:
+                to_update.append(select_option["id"])
         # Checks which option ids must be deleted by comparing the existing ids with
         # the provided ids.
         to_delete = [
@@ -729,8 +719,9 @@ class FieldHandler:
         # If the field_name_to_try is longer than the maximally allowed
         # field name length the name needs to be truncated.
         field_names_to_try = [
-            item[0:max_field_name_length] for item in field_names_to_try
+            item[:max_field_name_length] for item in field_names_to_try
         ]
+
         # Check if any of the names to try are available by finding any existing field
         # names with the same name.
         taken_field_names = set(
@@ -852,11 +843,7 @@ class FieldHandler:
                 if other_required_field.trashed:
                     self.restore_field(other_required_field)
         except Exception as e:
-            # Restoring a field could result in various errors such as a circular
-            # dependency appearing in the field dep graph. Allow the field type to
-            # handle any errors which occur for such situations.
-            exception_handled = field_type.restore_failed(field, e)
-            if exception_handled:
+            if exception_handled := field_type.restore_failed(field, e):
                 field_restored.send(self, field=field, user=None, related_fields=[])
             else:
                 raise e

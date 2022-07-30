@@ -194,7 +194,7 @@ class MultipleSelectConversionBase(MultipleSelectConversionConfig):
         Adds a temporary text field to the given model with the provided db_column name.
         """
 
-        tmp_field_name = "tmp_" + db_column
+        tmp_field_name = f"tmp_{db_column}"
         models.TextField(
             null=True, blank=True, db_column=db_column
         ).contribute_to_class(model, tmp_field_name)

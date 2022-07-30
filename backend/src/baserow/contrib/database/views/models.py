@@ -142,9 +142,11 @@ class View(
         :return: True if the password matches, False otherwise.
         """
 
-        if not self.public_view_has_password:
-            return True
-        return check_password(password, self.public_view_password)
+        return (
+            check_password(password, self.public_view_password)
+            if self.public_view_has_password
+            else True
+        )
 
     class Meta:
         ordering = ("order",)
@@ -198,11 +200,7 @@ class View(
         if create_if_missing:
             fields_queryset = Field.objects.filter(table_id=self.table.id)
 
-            if fields is None:
-                field_count = fields_queryset.count()
-            else:
-                field_count = len(fields)
-
+            field_count = fields_queryset.count() if fields is None else len(fields)
             # The check there are missing field options must be as efficient as
             # possible because this is being done a lot.
             if len(field_options) < field_count:

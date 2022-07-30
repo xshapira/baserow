@@ -85,12 +85,12 @@ def broadcast_to_group(self, group_id, payload, ignore_web_socket_id=None):
 
     from baserow.core.models import GroupUser
 
-    user_ids = [
+    if user_ids := [
         user["user_id"]
-        for user in GroupUser.objects.filter(group_id=group_id).values("user_id")
-    ]
-
-    if len(user_ids) == 0:
+        for user in GroupUser.objects.filter(group_id=group_id).values(
+            "user_id"
+        )
+    ]:
+        broadcast_to_users(user_ids, payload, ignore_web_socket_id)
+    else:
         return
-
-    broadcast_to_users(user_ids, payload, ignore_web_socket_id)

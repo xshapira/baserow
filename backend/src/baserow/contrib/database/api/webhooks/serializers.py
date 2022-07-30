@@ -184,23 +184,17 @@ class TableWebhookTestCallResponseSerializer(serializers.Serializer):
     def get_request(self, instance):
         request = instance.get("request")
 
-        if request is not None:
-            return WebhookHandler().format_request(request)
-        return ""
+        return WebhookHandler().format_request(request) if request is not None else ""
 
     @extend_schema_field(OpenApiTypes.STR)
     def get_response(self, instance):
         response = instance.get("response")
-        if response is not None:
-            return WebhookHandler().format_response(response)
-        return ""
+        return "" if response is None else WebhookHandler().format_response(response)
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_status_code(self, instance):
         response = instance.get("response")
-        if response is not None:
-            return response.status_code
-        return None
+        return response.status_code if response is not None else None
 
     @extend_schema_field(OpenApiTypes.BOOL)
     def get_is_unreachable(self, instance):

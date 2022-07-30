@@ -40,11 +40,7 @@ class TableFixtures:
 
         created_rows = []
         for row in rows:
-            kwargs = {}
-            i = 0
-            for field in fields:
-                kwargs[f"field_{field.id}"] = row[i]
-                i += 1
+            kwargs = {f"field_{field.id}": row[i] for i, field in enumerate(fields)}
             created_rows.append(model.objects.create(**kwargs))
 
         return table, fields, created_rows

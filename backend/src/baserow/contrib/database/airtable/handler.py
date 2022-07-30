@@ -86,8 +86,8 @@ class AirtableHandler:
 
         decoded_content = remove_invalid_surrogate_characters(response.content)
 
-        request_id = re.search('requestId: "(.*)",', decoded_content).group(1)
-        raw_init_data = re.search("window.initData = (.*);\n", decoded_content).group(1)
+        request_id = re.search('requestId: "(.*)",', decoded_content)[1]
+        raw_init_data = re.search("window.initData = (.*);\n", decoded_content)[1]
         init_data = json.loads(raw_init_data)
         cookies = response.cookies.get_dict()
 
@@ -145,7 +145,7 @@ class AirtableHandler:
         else:
             url = f"https://airtable.com/v0.3/table/{table_id}/readData"
 
-        response = requests.get(
+        return requests.get(
             url=url,
             stream=stream,
             params={
@@ -166,7 +166,6 @@ class AirtableHandler:
             },
             cookies=cookies,
         )
-        return response
 
     @staticmethod
     def extract_schema(exports: List[dict]) -> Tuple[dict, dict]:
@@ -337,7 +336,7 @@ class AirtableHandler:
         )
 
         with ZipFile(files_buffer, "a", ZIP_DEFLATED, False) as files_zip:
-            for index, (file_name, url) in enumerate(files_to_download.items()):
+            for file_name, url in files_to_download.items():
                 response = requests.get(url, headers=BASE_HEADERS)
                 files_zip.writestr(file_name, response.content)
                 progress.increment(state=AIRTABLE_EXPORT_JOB_DOWNLOADING_FILES)
@@ -378,19 +377,17 @@ class AirtableHandler:
         converting_progress = progress.create_child(
             represents_progress=500,
             total=sum(
-                [
-                    # Mapping progress
-                    len(tables[table["id"]]["rows"])
-                    # Table column progress
-                    + len(table["columns"])
-                    # Table rows progress
-                    + len(tables[table["id"]]["rows"])
-                    # The table itself.
-                    + 1
-                    for table in schema["tableSchemas"]
-                ]
+                len(tables[table["id"]]["rows"])
+                # Table column progress
+                + len(table["columns"])
+                # Table rows progress
+                + len(tables[table["id"]]["rows"])
+                # The table itself.
+                + 1
+                for table in schema["tableSchemas"]
             ),
         )
+
 
         # A list containing all the exported table in Baserow format.
         exported_tables = []
@@ -406,7 +403,7 @@ class AirtableHandler:
         # replace them with a unique int. We need a mapping because there could be
         # references to the row.
         row_id_mapping = defaultdict(dict)
-        for index, table in enumerate(schema["tableSchemas"]):
+        for table in schema["tableSchemas"]:
             for row_index, row in enumerate(tables[table["id"]]["rows"]):
                 new_id = row_index + 1
                 row_id_mapping[table["id"]][row["id"]] = new_id

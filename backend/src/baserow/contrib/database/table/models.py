@@ -105,10 +105,7 @@ class TableModelQuerySet(models.QuerySet):
         """
 
         possible_prefix = field[:1]
-        if possible_prefix in {"-", "+"}:
-            return field[1:]
-        else:
-            return field
+        return field[1:] if possible_prefix in {"-", "+"} else field
 
     def _get_field_id(self, field: str) -> Union[int, None]:
         """
@@ -122,7 +119,7 @@ class TableModelQuerySet(models.QuerySet):
         """
 
         try:
-            field_id = int(re.sub("[^0-9]", "", str(field)))
+            field_id = int(re.sub("[^0-9]", "", field))
         except ValueError:
             field_id = None
 
@@ -192,7 +189,7 @@ class TableModelQuerySet(models.QuerySet):
             user_field_name = field_object["field"].name
             error_display_name = user_field_name if user_field_names else field_name
 
-            if not field_object["type"].check_can_order_by(field_object["field"]):
+            if not field_type.check_can_order_by(field_object["field"]):
                 raise OrderByFieldNotPossible(
                     error_display_name,
                     field_type.type,
@@ -446,11 +443,12 @@ class Table(
 
             field = self._field_objects.get(self._primary_field_id, None)
 
-            if not field:
-                return f"unnamed row {self.id}"
-
-            return field["type"].get_human_readable_value(
-                getattr(self, field["name"]), field
+            return (
+                field["type"].get_human_readable_value(
+                    getattr(self, field["name"]), field
+                )
+                if field
+                else f"unnamed row {self.id}"
             )
 
         attrs = {
@@ -584,12 +582,12 @@ class Table(
 
         # Create a combined list of fields that must be added and belong to the this
         # table.
-        fields = list(fields) + [field for field in fields_query]
+        fields = list(fields) + list(fields_query)
 
         # If there are duplicate field names we have to store them in a list so we
         # know later which ones are duplicate.
         duplicate_field_names = []
-        already_included_field_names = set([f.name for f in fields])
+        already_included_field_names = {f.name for f in fields}
 
         # We will have to add each field to with the correct field name and model
         # field to the attribute list in order for the model to work.

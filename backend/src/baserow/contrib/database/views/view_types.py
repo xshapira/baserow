@@ -77,19 +77,18 @@ class GridViewType(ViewType):
 
         serialized = super().export_serialized(grid, files_zip, storage)
 
-        serialized_field_options = []
-        for field_option in grid.get_field_options():
-            serialized_field_options.append(
-                {
-                    "id": field_option.id,
-                    "field_id": field_option.field_id,
-                    "width": field_option.width,
-                    "hidden": field_option.hidden,
-                    "order": field_option.order,
-                    "aggregation_type": field_option.aggregation_type,
-                    "aggregation_raw_type": field_option.aggregation_raw_type,
-                }
-            )
+        serialized_field_options = [
+            {
+                "id": field_option.id,
+                "field_id": field_option.field_id,
+                "width": field_option.width,
+                "hidden": field_option.hidden,
+                "order": field_option.order,
+                "aggregation_type": field_option.aggregation_type,
+                "aggregation_raw_type": field_option.aggregation_raw_type,
+            }
+            for field_option in grid.get_field_options()
+        ]
 
         serialized["field_options"] = serialized_field_options
         return serialized
@@ -150,7 +149,7 @@ class GridViewType(ViewType):
         fields_dict = {field.id: field for field in fields}
 
         for field_id, options in field_options.items():
-            field = fields_dict.get(int(field_id), None)
+            field = fields_dict.get(int(field_id))
             aggregation_raw_type = options.get("aggregation_raw_type")
 
             if aggregation_raw_type and field:
@@ -329,16 +328,15 @@ class GalleryViewType(ViewType):
         """
 
         serialized = super().export_serialized(gallery, files_zip, storage)
-        serialized_field_options = []
-        for field_option in gallery.get_field_options():
-            serialized_field_options.append(
-                {
-                    "id": field_option.id,
-                    "field_id": field_option.field_id,
-                    "hidden": field_option.hidden,
-                    "order": field_option.order,
-                }
-            )
+        serialized_field_options = [
+            {
+                "id": field_option.id,
+                "field_id": field_option.field_id,
+                "hidden": field_option.hidden,
+                "order": field_option.order,
+            }
+            for field_option in gallery.get_field_options()
+        ]
 
         serialized["field_options"] = serialized_field_options
         return serialized
@@ -383,9 +381,7 @@ class GalleryViewType(ViewType):
         field_options = view.get_field_options(create_if_missing=True).order_by(
             "field__id"
         )
-        ids_to_update = [f.id for f in field_options[0:3]]
-
-        if ids_to_update:
+        if ids_to_update := [f.id for f in field_options[:3]]:
             GalleryViewFieldOptions.objects.filter(id__in=ids_to_update).update(
                 hidden=False
             )
@@ -463,7 +459,7 @@ class FormViewType(ViewType):
 
         fields_dict = {field.id: field for field in fields}
         for field_id, options in field_options.items():
-            field = fields_dict.get(int(field_id), None)
+            field = fields_dict.get(int(field_id))
             if options.get("enabled") and field:
                 field_type = field_type_registry.get_by_model(field.specific_class)
                 if not field_type.can_be_in_form_view:
@@ -584,7 +580,7 @@ class FormViewType(ViewType):
         """
 
         for user_file_key in ["cover_image", "logo_image"]:
-            user_file = values.get(user_file_key, None)
+            user_file = values.get(user_file_key)
 
             if user_file is None:
                 continue

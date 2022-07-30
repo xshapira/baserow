@@ -138,7 +138,7 @@ class Plugin:
         file_tokens: Iterable[TokenInfo] = None,
     ):
         self._tree = tree
-        self.filename = "stdin" if filename in ("stdin", "-", None) else filename
+        self.filename = "stdin" if filename in {"stdin", "-", None} else filename
         if lines:
             if isinstance(lines, str):
                 lines = lines.splitlines(True)

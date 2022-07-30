@@ -54,18 +54,17 @@ class FieldCache:
         )
 
     def cache_field(self, field):
-        if not field.trashed:
-            cached_fields = self._cached_field_by_name_per_table[field.table_id]
-
-            try:
-                specific_field = field.specific
-            except ObjectDoesNotExist:
-                return None
-
-            cached_fields[field.name] = specific_field
-            return specific_field
-        else:
+        if field.trashed:
             return None
+        cached_fields = self._cached_field_by_name_per_table[field.table_id]
+
+        try:
+            specific_field = field.specific
+        except ObjectDoesNotExist:
+            return None
+
+        cached_fields[field.name] = specific_field
+        return specific_field
 
     def lookup_specific(self, non_specific_field):
         try:

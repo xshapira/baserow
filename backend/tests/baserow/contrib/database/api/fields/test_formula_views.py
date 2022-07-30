@@ -375,7 +375,7 @@ def test_trashing_renaming_child_field(api_client, data_fixture):
     response_json = response.json()
     assert response.status_code == HTTP_200_OK, response_json
     assert response_json[1]["error"] is None
-    assert response_json[1]["formula"] == f"field('number')+1"
+    assert response_json[1]["formula"] == "field('number')+1"
 
     response = api_client.get(
         reverse("api:database:rows:list", kwargs={"table_id": table.id}),
@@ -451,7 +451,7 @@ def test_trashing_creating_child_field(api_client, data_fixture):
     response_json = response.json()
     assert response.status_code == HTTP_200_OK, response_json
     assert response_json["error"] is None
-    assert response_json["formula"] == f"field('number')+1"
+    assert response_json["formula"] == "field('number')+1"
 
     response = api_client.get(
         reverse("api:database:rows:list", kwargs={"table_id": table.id}),
@@ -911,10 +911,11 @@ def test_cant_type_an_invalid_formula_field(data_fixture, api_client):
             "api:database:formula:type_formula",
             kwargs={"table_id": table.id},
         ),
-        {f"formula": "1+'a'", "name": formula_field_name},
+        {"formula": "1+'a'", "name": formula_field_name},
         format="json",
         HTTP_AUTHORIZATION=f"JWT {token}",
     )
+
     response_json = response.json()
     assert response.status_code == 400, response_json
     assert response_json["error"] == "ERROR_WITH_FORMULA"
@@ -947,10 +948,11 @@ def test_can_type_a_valid_formula_field(data_fixture, api_client):
             "api:database:formula:type_formula",
             kwargs={"table_id": table.id},
         ),
-        {f"formula": "1+1", "name": formula_field_name},
+        {"formula": "1+1", "name": formula_field_name},
         format="json",
         HTTP_AUTHORIZATION=f"JWT {token}",
     )
+
     response_json = response.json()
     assert response.status_code == 200, response_json
     assert response_json == {
@@ -992,10 +994,11 @@ def test_type_endpoint_returns_error_for_bad_syntax(data_fixture, api_client):
             "api:database:formula:type_formula",
             kwargs={"table_id": table.id},
         ),
-        {f"formula": "bad syntax", "name": formula_field_name},
+        {"formula": "bad syntax", "name": formula_field_name},
         format="json",
         HTTP_AUTHORIZATION=f"JWT {token}",
     )
+
     response_json = response.json()
     assert response.status_code == HTTP_400_BAD_REQUEST
     assert response_json["error"] == "ERROR_WITH_FORMULA"
@@ -1049,11 +1052,14 @@ def test_type_endpoint_returns_error_for_missing_table(data_fixture, api_client)
     assert response.status_code == 200, response.json()
 
     response = api_client.post(
-        reverse("api:database:formula:type_formula", kwargs={"table_id": 9999}),
-        {f"formula": "bad syntax", "name": "field_name"},
+        reverse(
+            "api:database:formula:type_formula", kwargs={"table_id": 9999}
+        ),
+        {"formula": "bad syntax", "name": "field_name"},
         format="json",
         HTTP_AUTHORIZATION=f"JWT {token}",
     )
+
     response_json = response.json()
     assert response.status_code == HTTP_404_NOT_FOUND
     assert response_json["error"] == "ERROR_TABLE_DOES_NOT_EXIST"
@@ -1077,10 +1083,11 @@ def test_type_endpoint_returns_error_for_self_reference(data_fixture, api_client
             "api:database:formula:type_formula",
             kwargs={"table_id": table.id},
         ),
-        {f"formula": "field('formula')", "name": formula_field_name},
+        {"formula": "field('formula')", "name": formula_field_name},
         format="json",
         HTTP_AUTHORIZATION=f"JWT {token}",
     )
+
     response_json = response.json()
     assert response.status_code == HTTP_400_BAD_REQUEST
     assert response_json["error"] == "ERROR_FIELD_SELF_REFERENCE"
@@ -1116,10 +1123,11 @@ def test_type_endpoint_returns_error_if_not_permissioned_for_table(
             "api:database:formula:type_formula",
             kwargs={"table_id": table.id},
         ),
-        {f"formula": "1+1", "name": formula_field_name},
+        {"formula": "1+1", "name": formula_field_name},
         format="json",
         HTTP_AUTHORIZATION=f"JWT {other_token}",
     )
+
     response_json = response.json()
     assert response.status_code == HTTP_400_BAD_REQUEST
     assert response_json["error"] == "ERROR_USER_NOT_IN_GROUP"

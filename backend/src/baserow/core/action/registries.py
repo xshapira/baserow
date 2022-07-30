@@ -170,14 +170,13 @@ class ActionType(Instance, abc.ABC):
 
         session = get_untrusted_client_session_id(user)
 
-        action = Action.objects.create(
+        return Action.objects.create(
             user=user,
             type=cls.type,
             params=params,
             scope=scope,
             session=session,
         )
-        return action
 
     @classmethod
     def clean_up_any_extra_action_data(cls, action_being_cleaned_up: Action):

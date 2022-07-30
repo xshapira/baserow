@@ -28,7 +28,7 @@ def is_dict_subset(subset: dict, superset: dict) -> bool:
             for key, val in subset.items()
         )
 
-    if isinstance(subset, list) or isinstance(subset, set):
+    if isinstance(subset, (list, set)):
         return all(
             any(is_dict_subset(subitem, superitem) for superitem in superset)
             for subitem in subset
@@ -160,10 +160,12 @@ def setup_interesting_test_table(data_fixture, user_kwargs=None):
         "Please update the dictionary above with interesting test values for your new "
         f"field type. In the values dict you are missing the fields {missing_fields}."
     )
-    row_values = {}
-    for field_type, val in values.items():
-        if val is not None:
-            row_values[f"field_{name_to_field_id[field_type]}"] = val
+    row_values = {
+        f"field_{name_to_field_id[field_type]}": val
+        for field_type, val in values.items()
+        if val is not None
+    }
+
     # Make a blank row to test empty field conversion also.
 
     # We freeze time here so that we know what the values of the last_modified and

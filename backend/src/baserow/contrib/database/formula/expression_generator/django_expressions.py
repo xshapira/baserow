@@ -66,6 +66,4 @@ class BaserowStringAgg(OrderableAggMixin, Aggregate):
         super().__init__(expression, delimiter, **extra)
 
     def convert_value(self, value, expression, connection):
-        if not value:
-            return ""
-        return value
+        return value or ""

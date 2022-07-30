@@ -23,11 +23,7 @@ class PathBasedUpdateStatementCollector:
         update_statement: Expression,
         path_from_starting_table: Optional[List[LinkRowField]] = None,
     ):
-        if not path_from_starting_table:
-            if self.table != field.table:
-                raise InvalidViaPath()
-            self.update_statements[field.db_column] = update_statement
-        else:
+        if path_from_starting_table:
             next_via_field_link = path_from_starting_table[0]
             if next_via_field_link.link_row_table != self.table:
                 raise InvalidViaPath()
@@ -40,6 +36,11 @@ class PathBasedUpdateStatementCollector:
             self.sub_paths[next_link_db_column].add_update_statement(
                 field, update_statement, path_from_starting_table[1:]
             )
+
+        elif self.table != field.table:
+            raise InvalidViaPath()
+        else:
+            self.update_statements[field.db_column] = update_statement
 
     def execute_all(
         self,
@@ -60,12 +61,12 @@ class PathBasedUpdateStatementCollector:
         model = self.field_cache.get_model(self.table)
         qs = model.objects_and_trash
         if starting_row_id is not None:
-            if len(path_to_starting_table) == 0:
-                path_to_starting_table_id_column = "id"
-            else:
-                path_to_starting_table_id_column = (
-                    "__".join(path_to_starting_table) + "__id"
-                )
+            path_to_starting_table_id_column = (
+                ("__".join(path_to_starting_table) + "__id")
+                if path_to_starting_table
+                else "id"
+            )
+
             if isinstance(starting_row_id, list):
                 path_to_starting_table_id_column += "__in"
             qs = qs.filter(**{path_to_starting_table_id_column: starting_row_id})

@@ -103,4 +103,4 @@ class Command(BaseCommand):
                 )
                 sys.exit(1)
 
-        self.stdout.write(f"Your base has been imported.")
+        self.stdout.write("Your base has been imported.")

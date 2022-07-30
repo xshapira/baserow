@@ -378,12 +378,11 @@ class BaseDateFieldLookupFilterType(ViewFilterType):
 
         value = value.strip()
 
-        if value == "":
+        if not value:
             raise ValueError
 
         try:
-            parsed_date = parser.isoparse(value).date()
-            return parsed_date
+            return parser.isoparse(value).date()
         except ValueError as e:
             raise e
 
@@ -471,7 +470,7 @@ class DateEqualsTodayViewFilterType(ViewFilterType):
         now = datetime.utcnow().astimezone(timezone_object)
 
         def make_query_dict(query_field_name):
-            query_dict = dict()
+            query_dict = {}
             if "year" in self.query_for:
                 query_dict[f"{query_field_name}__year"] = now.year
             if "month" in self.query_for:
@@ -537,7 +536,7 @@ class DateEqualsDaysAgoViewFilterType(ViewFilterType):
             return Q(pk__in=[])
 
         def make_query_dict(query_field_name):
-            query_dict = dict()
+            query_dict = {}
             if "year" in self.query_for:
                 query_dict[f"{query_field_name}__year"] = when.year
             if "month" in self.query_for:

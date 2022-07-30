@@ -46,12 +46,14 @@ def test_batch_create_rows_link_row_field(api_client, data_fixture):
     expected_response_body = {
         "items": [
             {
-                f"id": 1,
-                f"field_{link_field.id}": [{"id": linked_row_3.id, "value": "Row 3"}],
+                "id": 1,
+                f"field_{link_field.id}": [
+                    {"id": linked_row_3.id, "value": "Row 3"}
+                ],
                 "order": "1.00000000000000000000",
             },
             {
-                f"id": 2,
+                "id": 2,
                 f"field_{link_field.id}": [
                     {"id": linked_row_2.id, "value": "Row 2"},
                     {"id": linked_row_3.id, "value": "Row 3"},
@@ -59,12 +61,13 @@ def test_batch_create_rows_link_row_field(api_client, data_fixture):
                 "order": "2.00000000000000000000",
             },
             {
-                f"id": 3,
+                "id": 3,
                 f"field_{link_field.id}": [],
                 "order": "3.00000000000000000000",
             },
         ]
     }
+
 
     response = api_client.post(
         url,
@@ -109,29 +112,26 @@ def test_batch_update_rows_link_row_field(api_client, data_fixture):
     url = reverse("api:database:rows:batch", kwargs={"table_id": table.id})
     request_body = {
         "items": [
+            {"id": row_1.id, f"field_{link_field.id}": [linked_row_3.id]},
             {
-                f"id": row_1.id,
-                f"field_{link_field.id}": [linked_row_3.id],
-            },
-            {
-                f"id": row_2.id,
+                "id": row_2.id,
                 f"field_{link_field.id}": [linked_row_3.id, linked_row_2.id],
             },
-            {
-                f"id": row_3.id,
-                f"field_{link_field.id}": [],
-            },
+            {"id": row_3.id, f"field_{link_field.id}": []},
         ]
     }
+
     expected_response_body = {
         "items": [
             {
-                f"id": row_1.id,
-                f"field_{link_field.id}": [{"id": linked_row_3.id, "value": "Row 3"}],
+                "id": row_1.id,
+                f"field_{link_field.id}": [
+                    {"id": linked_row_3.id, "value": "Row 3"}
+                ],
                 "order": "1.00000000000000000000",
             },
             {
-                f"id": row_2.id,
+                "id": row_2.id,
                 f"field_{link_field.id}": [
                     {"id": linked_row_2.id, "value": "Row 2"},
                     {"id": linked_row_3.id, "value": "Row 3"},
@@ -139,12 +139,13 @@ def test_batch_update_rows_link_row_field(api_client, data_fixture):
                 "order": "1.00000000000000000000",
             },
             {
-                f"id": row_3.id,
+                "id": row_3.id,
                 f"field_{link_field.id}": [],
                 "order": "1.00000000000000000000",
             },
         ]
     }
+
 
     response = api_client.patch(
         url,

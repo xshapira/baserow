@@ -77,10 +77,11 @@ class RegisterSerializer(serializers.Serializer):
 
 
 def get_action_scopes_request_serializer():
-    attrs = {}
+    attrs = {
+        scope_type.type: scope_type.get_request_serializer_field()
+        for scope_type in action_scope_registry.get_all()
+    }
 
-    for scope_type in action_scope_registry.get_all():
-        attrs[scope_type.type] = scope_type.get_request_serializer_field()
 
     return type(
         "ActionScopesRequestSerializer",
@@ -125,11 +126,12 @@ class UndoRedoResultCodeField(serializers.Field):
     def __init__(self, *args, **kwargs):
         kwargs[
             "help_text"
-        ] = f"Indicates the result of the undo/redo operation. Will be "
+        ] = "Indicates the result of the undo/redo operation. Will be "
+
         f"'{self.SUCCESS}' on success, '{self.NOTHING_TO_DO}' when "
-        f"there is no action to undo/redo and "
+        "there is no action to undo/redo and "
         f"'{self.SKIPPED_DUE_TO_ERROR}' when the undo/redo failed due "
-        f"to a conflict or error and was skipped over."
+        "to a conflict or error and was skipped over."
         super().__init__(*args, **kwargs)
 
     def get_attribute(self, instance):
@@ -139,10 +141,7 @@ class UndoRedoResultCodeField(serializers.Field):
         return self.NOTHING_TO_DO
 
     def to_representation(self, instance):
-        if instance.has_error():
-            return self.SKIPPED_DUE_TO_ERROR
-        else:
-            return self.SUCCESS
+        return self.SKIPPED_DUE_TO_ERROR if instance.has_error() else self.SUCCESS
 
 
 class UndoRedoResponseSerializer(serializers.ModelSerializer):

@@ -82,11 +82,11 @@ class BaserowFormulaToBaserowASTMapper(BaserowFormulaVisitor):
 
     def process_string(self, ctx):
         literal_without_outer_quotes = ctx.getText()[1:-1]
-        if ctx.SINGLEQ_STRING_LITERAL() is not None:
-            literal = literal_without_outer_quotes.replace("\\'", "'")
-        else:
-            literal = literal_without_outer_quotes.replace('\\"', '"')
-        return literal
+        return (
+            literal_without_outer_quotes.replace("\\'", "'")
+            if ctx.SINGLEQ_STRING_LITERAL() is not None
+            else literal_without_outer_quotes.replace('\\"', '"')
+        )
 
     def visitFunctionCall(self, ctx: BaserowFormula.FunctionCallContext):
         function_name = ctx.func_name().accept(self).lower()

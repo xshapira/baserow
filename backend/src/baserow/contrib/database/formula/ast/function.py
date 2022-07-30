@@ -30,10 +30,7 @@ from baserow.contrib.database.formula.types.formula_type import (
 
 class FixedNumOfArgs(ArgCountSpecifier):
     def __str__(self):
-        if self.count == 1:
-            plural = ""
-        else:
-            plural = "s"
+        plural = "" if self.count == 1 else "s"
         return f"exactly {self.count} argument{plural}"
 
     def test(self, num_args):
@@ -206,11 +203,10 @@ class OneArgumentBaserowFunction(BaserowFunctionDefinition):
         func_call: BaserowFunctionCall[UnTyped],
     ) -> BaserowExpression[BaserowFormulaType]:
         arg = args[0]
-        if self.aggregate:
-            if not arg.many:
-                func_call.with_invalid_type(
-                    "first argument must be an aggregate formula"
-                )
+        if self.aggregate and not arg.many:
+            func_call.with_invalid_type(
+                "first argument must be an aggregate formula"
+            )
 
         expr = self.type_function(func_call, arg)
         if self.aggregate:
@@ -253,8 +249,9 @@ def aggregate_wrapper(
     # We need to enforce that each filtered relation is not null so django generates us
     # inner joins.
     not_null_filters_for_inner_join = {
-        key + "__isnull": False for key in pre_annotations
+        f"{key}__isnull": False for key in pre_annotations
     }
+
     expr = ExpressionWrapper(
         Subquery(
             model.objects_and_trash.annotate(**pre_annotations)
@@ -367,11 +364,10 @@ class TwoArgumentBaserowFunction(BaserowFunctionDefinition):
         args: List[BaserowExpression[BaserowFormulaValidType]],
         func_call: BaserowFunctionCall[UnTyped],
     ) -> BaserowExpression[BaserowFormulaType]:
-        if self.aggregate:
-            if not args[0].many and not args[1].many:
-                func_call.with_invalid_type(
-                    "one of the two arguments must be an aggregate formula"
-                )
+        if self.aggregate and not args[0].many and not args[1].many:
+            func_call.with_invalid_type(
+                "one of the two arguments must be an aggregate formula"
+            )
 
         expr = self.type_function(func_call, args[0], args[1])
         if self.aggregate:

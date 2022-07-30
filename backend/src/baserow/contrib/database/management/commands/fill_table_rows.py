@@ -49,7 +49,7 @@ def fill_table_rows(limit, table):
     order = ceil(model.objects.aggregate(max=Max("order")).get("max") or Decimal("0"))
 
     rows = []
-    for i in range(0, limit):
+    for _ in range(limit):
         # Based on the random_value function we have for each type we can
         # build a dict with a random value for each field.
         values = {

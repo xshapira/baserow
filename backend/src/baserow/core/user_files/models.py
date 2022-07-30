@@ -65,15 +65,13 @@ class UserFile(models.Model):
         :rtype: dict
         """
 
-        matches = deconstruct_user_file_regex.match(name)
-
-        if not matches:
+        if matches := deconstruct_user_file_regex.match(name):
+            return {
+                "unique": matches[1],
+                "sha256_hash": matches[2],
+                "original_extension": matches[3],
+            }
+        else:
             raise InvalidUserFileNameError(
                 name, "The provided name is not in the correct format."
             )
-
-        return {
-            "unique": matches[1],
-            "sha256_hash": matches[2],
-            "original_extension": matches[3],
-        }

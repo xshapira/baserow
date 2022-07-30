@@ -53,10 +53,7 @@ class BaseEmailMessage(EmailMultiAlternatives):
         body_without_blank_lines = re.compile(r"\n ").sub(
             "\n", body_with_collapsed_spaces
         )
-        body_with_collapsed_newlines = re.compile(r"\n+").sub(
-            "\n", body_without_blank_lines
-        )
-        return body_with_collapsed_newlines
+        return re.compile(r"\n+").sub("\n", body_without_blank_lines)
 
     def get_context(self):
         return {

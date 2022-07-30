@@ -234,11 +234,10 @@ class BaserowFieldReference(BaserowExpression[A]):
         )
         if self.target_field is None:
             return f"field({escaped_name})"
-        else:
-            escaped_lookup = convert_string_to_string_literal_token(
-                self.target_field, True
-            )
-            return f"lookup({escaped_name},{escaped_lookup})"
+        escaped_lookup = convert_string_to_string_literal_token(
+            self.target_field, True
+        )
+        return f"lookup({escaped_name},{escaped_lookup})"
 
 
 class ArgCountSpecifier(abc.ABC):
@@ -488,8 +487,9 @@ class BaserowFunctionDefinition(Instance, abc.ABC):
         """
 
         valid_args: "List[BaserowExpression[formula_type.BaserowFormulaValidType]]" = (
-            list()
+            []
         )
+
         invalid_results: "List[Tuple[int, formula_type.BaserowFormulaInvalidType]]" = []
         for i, typed_arg in enumerate(typed_args):
             arg_type = typed_arg.expression_type
@@ -509,11 +509,10 @@ class BaserowFunctionDefinition(Instance, abc.ABC):
                     # Must be a valid type but the intellij type checker isn't so smart
                     # noinspection PyTypeChecker
                     valid_args.append(checked_typed_arg)
-        if len(invalid_results) > 0:
-            message = ", ".join([t.error for _, t in invalid_results])
-            return expression.with_invalid_type(message)
-        else:
+        if len(invalid_results) <= 0:
             return self.type_function_given_valid_args(valid_args, expression)
+        message = ", ".join([t.error for _, t in invalid_results])
+        return expression.with_invalid_type(message)
 
     def call_and_type_with_args(
         self,
@@ -550,23 +549,27 @@ class BaserowFunctionDefinition(Instance, abc.ABC):
         expression_type = typed_arg.expression_type
         valid_type_names = []
         for valid_arg_type in arg_types_for_this_arg:
-            if isinstance(valid_arg_type, SingleArgumentTypeChecker):
-                if valid_arg_type.check(expression_type):
-                    return typed_arg
-                else:
-                    valid_type_names.append(
-                        valid_arg_type.invalid_message(expression_type)
-                    )
-            elif isinstance(expression_type, valid_arg_type):
+            if (
+                isinstance(valid_arg_type, SingleArgumentTypeChecker)
+                and valid_arg_type.check(expression_type)
+                or not isinstance(valid_arg_type, SingleArgumentTypeChecker)
+                and isinstance(expression_type, valid_arg_type)
+            ):
                 return typed_arg
+            elif isinstance(
+                valid_arg_type, SingleArgumentTypeChecker
+            ) and not valid_arg_type.check(expression_type):
+                valid_type_names.append(
+                    valid_arg_type.invalid_message(expression_type)
+                )
             else:
                 valid_type_names.append(valid_arg_type.type)
 
         expression_type_name = expression_type.type
         if len(valid_type_names) == 1:
             postfix = f"the only usable type for this argument is {valid_type_names[0]}"
-        elif len(valid_type_names) == 0:
-            postfix = f"there are no possible types usable here"
+        elif not valid_type_names:
+            postfix = "there are no possible types usable here"
         else:
             postfix = (
                 f"the only usable types for this argument are "
@@ -580,15 +583,12 @@ class BaserowFunctionDefinition(Instance, abc.ABC):
 
     def __str__(self):
         if self.operator is None:
-            return "function " + self.type
+            return f"function {self.type}"
         else:
-            return "operator " + self.operator
+            return f"operator {self.operator}"
 
     def __eq__(self, other):
-        if type(other) is type(self):
-            return self.type == other.type
-        else:
-            return False
+        return self.type == other.type if type(other) is type(self) else False
 
     def __hash__(self):
         return hash(self.type)

@@ -215,8 +215,8 @@ class NumberField(Field):
     def save(self, *args, **kwargs):
         """Check if the number_decimal_places has a valid choice."""
 
-        if not any(
-            self.number_decimal_places in _tuple
+        if all(
+            self.number_decimal_places not in _tuple
             for _tuple in NUMBER_DECIMAL_PLACES_CHOICES
         ):
             raise ValueError(f"{self.number_decimal_places} is not a valid choice.")
@@ -251,15 +251,15 @@ class RatingField(Field):
         Check if the max_value, color and style have a valid value.
         """
 
-        if not any(self.style in _tuple for _tuple in RATING_STYLE_CHOICES):
+        if all(self.style not in _tuple for _tuple in RATING_STYLE_CHOICES):
             raise ValueError(f"{self.style} is not a valid choice.")
         if not self.color:
-            raise ValueError(f"color should be defined.")
+            raise ValueError("color should be defined.")
 
         if self.max_value < 1:
             raise ValueError("Ensure this value is greater than or equal to 1.")
         if self.max_value > 10:
-            raise ValueError(f"Ensure this value is less than or equal to 10.")
+            raise ValueError("Ensure this value is less than or equal to 10.")
 
         super().save(*args, **kwargs)
 

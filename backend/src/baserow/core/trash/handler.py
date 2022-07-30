@@ -433,12 +433,11 @@ def _get_applications_excluding_perm_deleted(group):
             "id", flat=True
         ),
     ).values_list("trash_item_id", flat=True)
-    applications = (
+    return (
         group.application_set_including_trash()
         .exclude(id__in=perm_deleted_apps)
         .order_by("order", "id")
     )
-    return applications
 
 
 def _get_trash_entry(

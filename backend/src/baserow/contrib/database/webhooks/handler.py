@@ -211,36 +211,31 @@ class WebhookHandler:
         elif events is not None:
             existing_events = webhook.events.all()
 
-            event_ids_to_delete = [
+            if event_ids_to_delete := [
                 existing.id
                 for existing in existing_events
                 if existing.event_type not in events
-            ]
-
-            if len(event_ids_to_delete) > 0:
+            ]:
                 TableWebhookEvent.objects.filter(
                     webhook=webhook, id__in=event_ids_to_delete
                 ).delete()
 
             existing_event_types = [event.event_type for event in existing_events]
-            events_to_create = [
+            if events_to_create := [
                 TableWebhookEvent(webhook=webhook, event_type=event_type)
                 for event_type in events
                 if event_type not in existing_event_types
-            ]
-
-            if len(events_to_create) > 0:
+            ]:
                 TableWebhookEvent.objects.bulk_create(events_to_create)
 
         if headers is not None:
             existing_headers = webhook.headers.all()
 
-            header_ids_to_delete = [
+            if header_ids_to_delete := [
                 existing.id
                 for existing in existing_headers
                 if existing.name not in headers
-            ]
-            if len(header_ids_to_delete) > 0:
+            ]:
                 TableWebhookHeader.objects.filter(
                     webhook=webhook, id__in=header_ids_to_delete
                 ).delete()
@@ -260,7 +255,7 @@ class WebhookHandler:
                         TableWebhookHeader(webhook=webhook, name=name, value=value)
                     )
 
-            if len(headers_to_create) > 0:
+            if headers_to_create:
                 TableWebhookHeader.objects.bulk_create(headers_to_create)
 
         return webhook
@@ -322,7 +317,7 @@ class WebhookHandler:
         return {
             "Content-type": "application/json",
             "X-Baserow-Event": event_type,
-            "X-Baserow-Delivery": str(event_id),
+            "X-Baserow-Delivery": event_id,
         }
 
     def trigger_test_call(
@@ -378,7 +373,7 @@ class WebhookHandler:
             row=row,
             before_return=before_return,
         )
-        headers.update(self.get_headers(event_type, event_id))
+        headers |= self.get_headers(event_type, event_id)
 
         return self.make_request(webhook.request_method, webhook.url, headers, payload)
 
@@ -388,8 +383,8 @@ class WebhookHandler:
         """
 
         return "{}\r\n{}\r\n\r\n{}".format(
-            request.method + " " + request.url,
-            "\r\n".join("{}: {}".format(k, v) for k, v in request.headers.items()),
+            f"{request.method} {request.url}",
+            "\r\n".join(f"{k}: {v}" for k, v in request.headers.items()),
             json.dumps(json.loads(request.body or "{}"), indent=4),
         )
 
@@ -407,7 +402,7 @@ class WebhookHandler:
             response_body = response.text
 
         return "{}\r\n\r\n{}".format(
-            "\r\n".join("{}: {}".format(k, v) for k, v in response.headers.items()),
+            "\r\n".join(f"{k}: {v}" for k, v in response.headers.items()),
             response_body,
         )
 

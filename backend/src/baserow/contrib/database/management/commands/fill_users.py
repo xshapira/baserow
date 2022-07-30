@@ -31,7 +31,7 @@ class Command(BaseCommand):
         )
 
         clashing_email_counter = 0
-        for i in range(limit):
+        for _ in range(limit):
             username = email_prefix + fake.email()
             password = str(uuid.uuid4())
             name = fake.name()

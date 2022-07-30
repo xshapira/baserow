@@ -15,7 +15,7 @@ def test_deep_circular_ref(data_fixture, django_assert_num_queries):
     depth = settings.MAX_FIELD_REFERENCE_DEPTH
     starting_field = data_fixture.create_text_field()
     previous_field = starting_field
-    for i in range(depth):
+    for _ in range(depth):
         new_field = data_fixture.create_text_field(table=starting_field.table)
         FieldDependency.objects.create(dependant=previous_field, dependency=new_field)
         previous_field = new_field

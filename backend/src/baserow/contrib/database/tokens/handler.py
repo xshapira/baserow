@@ -139,7 +139,7 @@ class TokenHandler:
         :rtype: Token
         """
 
-        if not user.id == token.user_id:
+        if user.id != token.user_id:
             raise TokenDoesNotBelongToUser(
                 "The user is not authorized to rotate the " "key."
             )
@@ -165,7 +165,7 @@ class TokenHandler:
         :rtype: Token
         """
 
-        if not user.id == token.user_id:
+        if user.id != token.user_id:
             raise TokenDoesNotBelongToUser(
                 "The user is not authorized to rotate the " "key."
             )
@@ -230,7 +230,7 @@ class TokenHandler:
             provided user.
         """
 
-        if not user.id == token.user_id:
+        if user.id != token.user_id:
             raise TokenDoesNotBelongToUser(
                 "The user is not authorized to delete the " "token."
             )
@@ -290,23 +290,29 @@ class TokenHandler:
         to_delete = [
             existing.id
             for existing in existing_permissions
-            if not any([equals(existing, desired) for desired in desired_permissions])
+            if not any(
+                equals(existing, desired) for desired in desired_permissions
+            )
         ]
+
 
         # Check which permission must be created by comparing them to the existing
         # permissions.
         to_create = [
             desired
             for desired in desired_permissions
-            if not any([equals(desired, existing) for existing in existing_permissions])
+            if not any(
+                equals(desired, existing) for existing in existing_permissions
+            )
         ]
 
+
         # Delete the permissions that must be delete in bulk.
-        if len(to_delete) > 0:
+        if to_delete:
             TokenPermission.objects.filter(id__in=to_delete).delete()
 
         # Create the permissions that must be created in bulk.
-        if len(to_create) > 0:
+        if to_create:
             TokenPermission.objects.bulk_create(to_create)
 
     def has_table_permission(self, token, type_name, table):
@@ -333,11 +339,7 @@ class TokenHandler:
         if not table.database.group.has_user(token.user):
             return False
 
-        if isinstance(type_name, str):
-            type_names = [type_name]
-        else:
-            type_names = type_name
-
+        type_names = [type_name] if isinstance(type_name, str) else type_name
         return TokenPermission.objects.filter(
             Q(database__table=table)
             | Q(table_id=table.id)
@@ -413,7 +415,7 @@ class TokenHandler:
             provided user.
         """
 
-        if not user.id == token.user_id:
+        if user.id != token.user_id:
             raise TokenDoesNotBelongToUser(
                 "The user is not authorized to delete the " "token."
             )

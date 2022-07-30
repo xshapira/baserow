@@ -130,7 +130,6 @@ class DatabaseApplicationType(ApplicationType):
         tables = serialized_values.pop("tables")
 
         child_total = (
-            # For the super application
             1
             +
             # Creating each table
@@ -139,21 +138,19 @@ class DatabaseApplicationType(ApplicationType):
             # Creating each model table
             len(tables)
             + sum(
-                [
-                    # Inserting every field
-                    len(table["fields"]) +
-                    # Inserting every field
-                    len(table["views"]) +
-                    # Converting every row
-                    len(table["rows"]) +
-                    # Inserting every row
-                    len(table["rows"]) +
-                    # After each field
-                    len(table["fields"])
-                    for table in tables
-                ]
+                len(table["fields"]) +
+                # Inserting every field
+                len(table["views"]) +
+                # Converting every row
+                len(table["rows"]) +
+                # Inserting every row
+                len(table["rows"]) +
+                # After each field
+                len(table["fields"])
+                for table in tables
             )
         )
+
         progress = ChildProgressBuilder.build(progress_builder, child_total=child_total)
 
         database = super().import_serialized(
@@ -188,11 +185,9 @@ class DatabaseApplicationType(ApplicationType):
         for table in tables:
             for field in table["fields"]:
                 field_type = field_type_registry.get(field["type"])
-                field_object = field_type.import_serialized(
+                if field_object := field_type.import_serialized(
                     table["_object"], field, id_mapping
-                )
-
-                if field_object:
+                ):
                     table["_field_objects"].append(field_object)
                     all_fields.append((field_type, field_object))
                 else:
